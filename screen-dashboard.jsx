@@ -61,6 +61,8 @@ function Dashboard() {
         React.createElement('div', { className: 'card-pad', style: { display: 'grid', placeItems: 'center', minHeight: 224 } },
           React.createElement(Charts.Donut, { data: dash.planMix })))),
 
+    React.createElement(SchoolsMapCard, null),
+
     /* second row: signups + usage alerts */
     React.createElement('div', { style: { display: 'grid', gridTemplateColumns: '1fr 1.3fr', gap: 16, marginBottom: 16 } },
       React.createElement('div', { className: 'card' },
@@ -104,4 +106,66 @@ function Dashboard() {
           React.createElement('span', { className: 'role-badge', style: { background: window.RBAC.ROLES[a.role].color + '22', color: window.RBAC.ROLES[a.role].color } }, a.role),
           React.createElement('span', { className: 'tiny muted', style: { width: 76, textAlign: 'right' } }, a.time))))));
 }
+/* ---------------- Schools-across-India map (unique city markers) ---------------- */
+const CITY_COORDS = {
+  'Mumbai, MH': [19.08, 72.88], 'New Delhi, DL': [28.61, 77.21], 'Bengaluru, KA': [12.97, 77.59],
+  'Hyderabad, TS': [17.39, 78.49], 'Chennai, TN': [13.08, 80.27], 'Pune, MH': [18.52, 73.86],
+  'Kolkata, WB': [22.57, 88.36], 'Ahmedabad, GJ': [23.03, 72.58], 'Jaipur, RJ': [26.91, 75.79],
+  'Kochi, KL': [9.93, 76.27],
+};
+// coarse India silhouette (clockwise [lat,lng]) — decorative backdrop for the markers
+const INDIA_OUTLINE = [
+  [35.5, 76.0], [32.5, 75.0], [30.2, 74.2], [28.0, 70.0], [24.3, 68.4],
+  [22.2, 69.2], [20.7, 72.8], [15.8, 73.6], [12.5, 74.9], [8.1, 77.5],
+  [9.6, 79.3], [13.1, 80.3], [16.2, 81.3], [19.5, 85.2], [21.6, 87.0],
+  [21.9, 89.0], [25.3, 89.8], [26.8, 92.5], [28.1, 95.6], [27.0, 96.0],
+  [27.9, 92.0], [28.5, 88.8], [30.3, 81.0], [30.7, 79.0], [32.6, 78.7], [34.5, 78.2],
+];
+
+function SchoolsMapCard() {
+  const { DB } = window;
+  const nav = window.useNav();
+  const W = 360, H = 430, PAD = 16;
+  const minLng = 67, maxLng = 98, minLat = 6.5, maxLat = 37;
+  const px = (ln) => PAD + (ln - minLng) / (maxLng - minLng) * (W - 2 * PAD);
+  const py = (la) => PAD + (maxLat - la) / (maxLat - minLat) * (H - 2 * PAD);
+  const outlinePath = 'M ' + INDIA_OUTLINE.map(([la, ln]) => px(ln).toFixed(1) + ' ' + py(la).toFixed(1)).join(' L ') + ' Z';
+
+  const byCity = {};
+  DB.CLIENTS.forEach(c => { if (!CITY_COORDS[c.country]) return; const b = byCity[c.country] || (byCity[c.country] = { count: 0, active: 0 }); b.count++; if (c.status === 'active') b.active++; });
+  const cities = Object.keys(byCity).map(city => ({ city, count: byCity[city].count, active: byCity[city].active, lat: CITY_COORDS[city][0], lng: CITY_COORDS[city][1] }));
+  const maxCount = Math.max.apply(null, cities.map(c => c.count).concat(1));
+  const ranked = cities.slice().sort((a, b) => b.count - a.count);
+
+  return React.createElement('div', { style: { display: 'grid', gridTemplateColumns: '1fr 320px', gap: 16, marginBottom: 16 } },
+    React.createElement('div', { className: 'card' },
+      React.createElement('div', { className: 'card-head' },
+        React.createElement('div', { className: 'f1' },
+          React.createElement('h3', null, 'Schools across India'),
+          React.createElement('div', { className: 'sub' }, DB.CLIENTS.length + ' schools · ' + cities.length + ' cities')),
+        React.createElement('span', { className: 'badge badge-slate' }, 'Live map')),
+      React.createElement('div', { className: 'card-pad', style: { display: 'grid', placeItems: 'center' } },
+        React.createElement('svg', { viewBox: '0 0 ' + W + ' ' + H, style: { width: '100%', maxWidth: 380, height: 'auto' }, role: 'img', 'aria-label': 'Map of schools across India' },
+          React.createElement('path', { d: outlinePath, fill: 'var(--surface-2)', stroke: 'var(--border)', strokeWidth: 1.5, strokeLinejoin: 'round' }),
+          cities.map(c => {
+            const r = 5 + (c.count / maxCount) * 16, x = px(c.lng), y = py(c.lat);
+            return React.createElement('g', { key: c.city, style: { cursor: 'pointer' }, onClick: () => nav.go('clients') },
+              React.createElement('title', null, c.city + ' · ' + c.count + ' schools (' + c.active + ' active)'),
+              React.createElement('circle', { cx: x, cy: y, r: r, fill: 'var(--accent)', fillOpacity: 0.22, stroke: 'var(--accent)', strokeWidth: 1.5 }),
+              React.createElement('circle', { cx: x, cy: y, r: 2.5, fill: 'var(--accent)' }),
+              React.createElement('text', { x: x, y: y - r - 3, textAnchor: 'middle', style: { fontSize: 9, fontWeight: 700, fill: 'var(--text-2)' } }, c.count));
+          })))),
+    React.createElement('div', { className: 'card' },
+      React.createElement('div', { className: 'card-head' }, React.createElement('h3', null, 'Schools by city')),
+      React.createElement('div', null, ranked.map((c, i) =>
+        React.createElement('div', { key: c.city, className: 'row gap12', style: { padding: '10px 16px', borderBottom: i < ranked.length - 1 ? '1px solid var(--border-soft)' : 'none', cursor: 'pointer' }, onClick: () => nav.go('clients') },
+          React.createElement('span', { className: 'tiny muted mono', style: { width: 16 } }, i + 1),
+          React.createElement('div', { className: 'f1', style: { minWidth: 0 } },
+            React.createElement('div', { className: 'row jb' },
+              React.createElement('span', { style: { fontWeight: 600, fontSize: 13 } }, c.city),
+              React.createElement('span', { className: 'mono tiny muted' }, c.count)),
+            React.createElement('div', { style: { height: 5, borderRadius: 3, background: 'var(--surface-2)', marginTop: 5, overflow: 'hidden' } },
+              React.createElement('div', { style: { width: (c.count / maxCount * 100) + '%', height: '100%', background: 'var(--accent)', borderRadius: 3 } }))))))));
+}
+
 window.Dashboard = Dashboard;
