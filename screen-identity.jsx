@@ -31,7 +31,7 @@ function IdentityScreen() {
   const roleList = Object.values(ROLES);
   const permEntries = Object.keys(PERMISSION_CATALOG).map(k => [k, PERMISSION_CATALOG[k]]);
   const roleHas = (r, k) => !!matrix[k] && matrix[k].includes(r);
-  const me = (DB.TEAM.find(u => u.role === myRole && u.status === 'active') || { name: ROLES[myRole].name + ' User' }).name;
+  const me = (team.find(u => u.role === myRole && u.status === 'active') || { name: ROLES[myRole].name + ' User' }).name;
 
   const pushAudit = (action, target) => {
     seq.current += 1;
