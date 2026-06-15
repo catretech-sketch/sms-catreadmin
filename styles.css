@@ -453,3 +453,8 @@ table.tbl { width: 100%; border-collapse: collapse; font-size: 13px; }
 .mb4{margin-bottom:4px}.mb8{margin-bottom:8px}.mb12{margin-bottom:12px}.mb16{margin-bottom:16px}.mb20{margin-bottom:20px}
 .fc{display:flex;flex-direction:column}.ac{align-items:center}.jb{justify-content:space-between}.jc{justify-content:center}.fw{flex-wrap:wrap}.f1{flex:1}
 .w100{width:100%}.tr{text-align:right}.tc{text-align:center}
+
+/* ── Identity & Access — access matrix ── */
+.tbl-matrix th, .tbl-matrix td { vertical-align: middle; }
+.tbl-matrix tbody td:first-child { white-space: nowrap; }
+.tbl-matrix button:not(:disabled):hover { filter: brightness(1.12); }
