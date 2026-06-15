@@ -40,14 +40,47 @@ const MATRIX = {
   'settings.view':         ['owner'],
   'settings.manage':       ['owner'],
   'reports.view':          ['owner','admin','support','sales','finance','analyst'],
+  'identity.view':         ['owner','admin'],
+  'identity.manage':       ['owner','admin'],
 };
 
 const can = (role, action) => !!MATRIX[action] && MATRIX[action].includes(role);
 
+// Human-readable metadata for every MATRIX permission key — drives the Identity & Access UI.
+const PERMISSION_CATALOG = {
+  'dashboard.view':         { label: 'View dashboard',           group: 'Overview' },
+  'clients.view':           { label: 'View clients',             group: 'Clients' },
+  'clients.start_trial':    { label: 'Start trial',              group: 'Clients' },
+  'clients.activate':       { label: 'Activate client',          group: 'Clients' },
+  'clients.suspend':        { label: 'Suspend client',           group: 'Clients' },
+  'clients.reinstate':      { label: 'Reinstate client',         group: 'Clients' },
+  'clients.cancel':         { label: 'Cancel client',            group: 'Clients' },
+  'clients.change_plan':    { label: 'Change plan',              group: 'Clients' },
+  'clients.delete':         { label: 'Delete client',            group: 'Clients' },
+  'clients.impersonate':    { label: 'Impersonate client',       group: 'Clients' },
+  'usage.view':             { label: 'View usage',               group: 'Clients' },
+  'onboarding.view':        { label: 'View onboarding',          group: 'Onboarding' },
+  'onboarding.manage':      { label: 'Manage onboarding',        group: 'Onboarding' },
+  'plans.view':             { label: 'View plans',               group: 'Revenue' },
+  'plans.manage':           { label: 'Manage plans',             group: 'Revenue' },
+  'billing.view':           { label: 'View billing',             group: 'Revenue' },
+  'billing.manage_invoice': { label: 'Manage invoices',          group: 'Revenue' },
+  'billing.refund':         { label: 'Issue refunds',            group: 'Revenue' },
+  'reports.view':           { label: 'View reports',             group: 'Revenue' },
+  'support.view':           { label: 'View support',             group: 'Support' },
+  'support.manage':         { label: 'Manage tickets',           group: 'Support' },
+  'team.view':              { label: 'View team',                group: 'Admin' },
+  'team.manage':            { label: 'Manage team',              group: 'Admin' },
+  'settings.view':          { label: 'View settings',            group: 'Admin' },
+  'settings.manage':        { label: 'Manage settings',          group: 'Admin' },
+  'identity.view':          { label: 'View Identity & Access',   group: 'Admin' },
+  'identity.manage':        { label: 'Manage Identity & Access', group: 'Admin' },
+};
+
 // Roles exposed for sign-in + the in-app switcher (this deployment runs Admin + Sales only)
 const DEMO_ROLES = ['admin', 'sales'];
 
-window.RBAC = { ROLES, MATRIX, can, DEMO_ROLES };
+window.RBAC = { ROLES, MATRIX, can, DEMO_ROLES, PERMISSION_CATALOG };
 
 /* ---------------- SEED ---------------- */
 // deterministic PRNG
