@@ -18,4 +18,8 @@ const INVOICE_KEYS = ['id', 'tenant_id', 'tenant_name', 'plan_name', 'amount', '
 
 const SUPPORT_TICKET_KEYS = ['id', 'subject', 'tenant_id', 'tenant_name', 'status', 'priority', 'assignee', 'created', 'updated', 'messages_count'];
 
-module.exports = { TENANT_KEYS, PLAN_KEYS, TEAM_MEMBER_KEYS, INVOICE_KEYS, SUPPORT_TICKET_KEYS };
+const ROLE_KEYS = ['key', 'name', 'description', 'color'];
+
+const PERMISSION_KEYS = ['key', 'label', 'group', 'roles'];
+
+module.exports = { TENANT_KEYS, PLAN_KEYS, TEAM_MEMBER_KEYS, INVOICE_KEYS, SUPPORT_TICKET_KEYS, ROLE_KEYS, PERMISSION_KEYS };

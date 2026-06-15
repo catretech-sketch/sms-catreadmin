@@ -55,4 +55,21 @@ const ticketDTO = A.toTicketDTO(ticket);
 sameKeys(ticketDTO, C.SUPPORT_TICKET_KEYS, 'SupportTicket');
 assert.strictEqual(ticketDTO.messages_count, 4);
 
+// ── Role (from a ROLES entry) ──
+const roleDTO = A.toRoleDTO({ key: 'admin', name: 'Admin', desc: 'Client lifecycle, billing, support, onboarding.', color: 'var(--blue)' });
+sameKeys(roleDTO, C.ROLE_KEYS, 'Role');
+assert.strictEqual(roleDTO.description, 'Client lifecycle, billing, support, onboarding.');
+assert.strictEqual(roleDTO.color, 'var(--blue)');
+
+// ── Permission (key + catalog meta + matrix row) ──
+const permDTO = A.toPermissionDTO('billing.refund', { label: 'Issue refunds', group: 'Revenue' }, { 'billing.refund': ['owner', 'finance'] });
+sameKeys(permDTO, C.PERMISSION_KEYS, 'Permission');
+assert.strictEqual(permDTO.label, 'Issue refunds');
+assert.strictEqual(permDTO.group, 'Revenue');
+assert.deepStrictEqual(permDTO.roles, ['owner', 'finance']);
+
+// toPermissionDTO with a key absent from the matrix yields an empty roles list
+const permDTOmissing = A.toPermissionDTO('identity.view', { label: 'View Identity & Access', group: 'Admin' }, {});
+assert.deepStrictEqual(permDTOmissing.roles, []);
+
 console.log('OK: all canonical adapter contracts pass');

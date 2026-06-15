@@ -100,4 +100,22 @@ function toTicketDTO(t) {
   };
 }
 
-module.exports = { toTenantDTO, toPlanDTO, toTeamMemberDTO, toInvoiceDTO, toTicketDTO };
+function toRoleDTO(r) {
+  return {
+    key: r.key,
+    name: r.name,
+    description: r.desc,
+    color: r.color,
+  };
+}
+
+function toPermissionDTO(key, meta, matrix) {
+  return {
+    key,
+    label: meta.label,
+    group: meta.group,
+    roles: matrix[key] || [],
+  };
+}
+
+module.exports = { toTenantDTO, toPlanDTO, toTeamMemberDTO, toInvoiceDTO, toTicketDTO, toRoleDTO, toPermissionDTO };
