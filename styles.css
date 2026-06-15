@@ -458,3 +458,8 @@ table.tbl { width: 100%; border-collapse: collapse; font-size: 13px; }
 .tbl-matrix th, .tbl-matrix td { vertical-align: middle; }
 .tbl-matrix tbody td:first-child { white-space: nowrap; }
 .tbl-matrix button:not(:disabled):hover { filter: brightness(1.12); }
+
+/* ── Leaflet schools map ── */
+.leaflet-container { font: inherit; background: var(--surface-2); }
+.sm-map-count { background: transparent; border: 0; box-shadow: none; color: #fff; font-weight: 700; font-size: 11px; text-shadow: 0 1px 2px rgba(0,0,0,.55); }
+.sm-map-count::before { display: none; }

@@ -122,20 +122,56 @@ const INDIA_OUTLINE = [
   [27.9, 92.0], [28.5, 88.8], [30.3, 81.0], [30.7, 79.0], [32.6, 78.7], [34.5, 78.2],
 ];
 
-function SchoolsMapCard() {
-  const { DB } = window;
+function SvgSchoolsMap({ cities }) {
   const nav = window.useNav();
   const W = 360, H = 430, PAD = 16;
   const minLng = 67, maxLng = 98, minLat = 6.5, maxLat = 37;
   const px = (ln) => PAD + (ln - minLng) / (maxLng - minLng) * (W - 2 * PAD);
   const py = (la) => PAD + (maxLat - la) / (maxLat - minLat) * (H - 2 * PAD);
   const outlinePath = 'M ' + INDIA_OUTLINE.map(([la, ln]) => px(ln).toFixed(1) + ' ' + py(la).toFixed(1)).join(' L ') + ' Z';
+  const maxCount = Math.max.apply(null, cities.map(c => c.count).concat(1));
+  return React.createElement('svg', { viewBox: '0 0 ' + W + ' ' + H, style: { width: '100%', maxWidth: 380, height: 'auto' }, role: 'img', 'aria-label': 'Map of schools across India' },
+    React.createElement('path', { d: outlinePath, fill: 'var(--surface-2)', stroke: 'var(--border)', strokeWidth: 1.5, strokeLinejoin: 'round' }),
+    cities.map(c => {
+      const r = 5 + (c.count / maxCount) * 16, x = px(c.lng), y = py(c.lat);
+      return React.createElement('g', { key: c.city, style: { cursor: 'pointer' }, onClick: () => nav.go('clients') },
+        React.createElement('title', null, c.city + ' · ' + c.count + ' schools (' + c.active + ' active)'),
+        React.createElement('circle', { cx: x, cy: y, r: r, fill: 'var(--accent)', fillOpacity: 0.22, stroke: 'var(--accent)', strokeWidth: 1.5 }),
+        React.createElement('circle', { cx: x, cy: y, r: 2.5, fill: 'var(--accent)' }),
+        React.createElement('text', { x: x, y: y - r - 3, textAnchor: 'middle', style: { fontSize: 9, fontWeight: 700, fill: 'var(--text-2)' } }, c.count));
+    }));
+}
 
+function LeafletSchoolsMap({ cities, onPick }) {
+  const ref = React.useRef(null);
+  React.useEffect(() => {
+    const L = window.L;
+    if (!L || !ref.current) return;
+    const map = L.map(ref.current, { scrollWheelZoom: false }).setView([22, 79.5], 4);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 18, attribution: '&copy; OpenStreetMap contributors' }).addTo(map);
+    const maxCount = Math.max.apply(null, cities.map(c => c.count).concat(1));
+    cities.forEach(c => {
+      const m = L.circleMarker([c.lat, c.lng], { radius: 8 + (c.count / maxCount) * 18, color: '#7c74ff', weight: 2, fillColor: '#7c74ff', fillOpacity: 0.35 }).addTo(map);
+      m.bindPopup('<b>' + c.city + '</b><br>' + c.count + ' schools · ' + c.active + ' active');
+      m.bindTooltip(String(c.count), { permanent: true, direction: 'center', className: 'sm-map-count' });
+      if (onPick) m.on('click', onPick);
+    });
+    if (cities.length) map.fitBounds(cities.map(c => [c.lat, c.lng]), { padding: [30, 30] });
+    const t = setTimeout(() => map.invalidateSize(), 60);
+    return () => { clearTimeout(t); map.remove(); };
+  }, []); // eslint-disable-line
+  return React.createElement('div', { ref: ref, style: { height: 430, width: '100%', borderRadius: 12, overflow: 'hidden', isolation: 'isolate' } });
+}
+
+function SchoolsMapCard() {
+  const { DB } = window;
+  const nav = window.useNav();
   const byCity = {};
   DB.CLIENTS.forEach(c => { if (!CITY_COORDS[c.country]) return; const b = byCity[c.country] || (byCity[c.country] = { count: 0, active: 0 }); b.count++; if (c.status === 'active') b.active++; });
   const cities = Object.keys(byCity).map(city => ({ city, count: byCity[city].count, active: byCity[city].active, lat: CITY_COORDS[city][0], lng: CITY_COORDS[city][1] }));
   const maxCount = Math.max.apply(null, cities.map(c => c.count).concat(1));
   const ranked = cities.slice().sort((a, b) => b.count - a.count);
+  const hasLeaflet = !!window.L;
 
   return React.createElement('div', { style: { display: 'grid', gridTemplateColumns: '1fr 320px', gap: 16, marginBottom: 16 } },
     React.createElement('div', { className: 'card' },
@@ -143,18 +179,11 @@ function SchoolsMapCard() {
         React.createElement('div', { className: 'f1' },
           React.createElement('h3', null, 'Schools across India'),
           React.createElement('div', { className: 'sub' }, DB.CLIENTS.length + ' schools · ' + cities.length + ' cities')),
-        React.createElement('span', { className: 'badge badge-slate' }, 'Live map')),
-      React.createElement('div', { className: 'card-pad', style: { display: 'grid', placeItems: 'center' } },
-        React.createElement('svg', { viewBox: '0 0 ' + W + ' ' + H, style: { width: '100%', maxWidth: 380, height: 'auto' }, role: 'img', 'aria-label': 'Map of schools across India' },
-          React.createElement('path', { d: outlinePath, fill: 'var(--surface-2)', stroke: 'var(--border)', strokeWidth: 1.5, strokeLinejoin: 'round' }),
-          cities.map(c => {
-            const r = 5 + (c.count / maxCount) * 16, x = px(c.lng), y = py(c.lat);
-            return React.createElement('g', { key: c.city, style: { cursor: 'pointer' }, onClick: () => nav.go('clients') },
-              React.createElement('title', null, c.city + ' · ' + c.count + ' schools (' + c.active + ' active)'),
-              React.createElement('circle', { cx: x, cy: y, r: r, fill: 'var(--accent)', fillOpacity: 0.22, stroke: 'var(--accent)', strokeWidth: 1.5 }),
-              React.createElement('circle', { cx: x, cy: y, r: 2.5, fill: 'var(--accent)' }),
-              React.createElement('text', { x: x, y: y - r - 3, textAnchor: 'middle', style: { fontSize: 9, fontWeight: 700, fill: 'var(--text-2)' } }, c.count));
-          })))),
+        React.createElement('span', { className: 'badge badge-slate' }, hasLeaflet ? 'OpenStreetMap' : 'Map')),
+      React.createElement('div', { className: 'card-pad', style: hasLeaflet ? { padding: 12 } : { display: 'grid', placeItems: 'center' } },
+        hasLeaflet
+          ? React.createElement(LeafletSchoolsMap, { cities: cities, onPick: () => nav.go('clients') })
+          : React.createElement(SvgSchoolsMap, { cities: cities }))),
     React.createElement('div', { className: 'card' },
       React.createElement('div', { className: 'card-head' }, React.createElement('h3', null, 'Schools by city')),
       React.createElement('div', null, ranked.map((c, i) =>
