@@ -25,6 +25,7 @@ const MATRIX = {
   'clients.change_plan':   ['owner','admin','sales','finance'],
   'clients.delete':        ['owner'],
   'clients.impersonate':   ['owner','admin','support'],
+  'clients.manage_people': ['owner','admin'],
   'usage.view':            ['owner','admin','support','sales','finance','analyst'],
   'onboarding.view':       ['owner','admin','support','sales'],
   'onboarding.manage':     ['owner','admin','sales'],
@@ -58,6 +59,7 @@ const PERMISSION_CATALOG = {
   'clients.change_plan':    { label: 'Change plan',              group: 'Clients' },
   'clients.delete':         { label: 'Delete client',            group: 'Clients' },
   'clients.impersonate':    { label: 'Impersonate client',       group: 'Clients' },
+  'clients.manage_people':  { label: 'Manage school people',     group: 'Clients' },
   'usage.view':             { label: 'View usage',               group: 'Clients' },
   'onboarding.view':        { label: 'View onboarding',          group: 'Onboarding' },
   'onboarding.manage':      { label: 'Manage onboarding',        group: 'Onboarding' },
@@ -243,6 +245,39 @@ const CLIENTS = SCHOOL_NAMES.map(([name, slug], i) => {
   };
 });
 
+/* ---------------- per-school people rosters (mock) ----------------
+   The panel only stores aggregate counts per tenant, so this fabricates
+   a deterministic, representative roster for a school's detail page. */
+const GRADES = ['Grade 1','Grade 2','Grade 3','Grade 4','Grade 5','Grade 6','Grade 7','Grade 8','Grade 9','Grade 10','Grade 11','Grade 12'];
+const CLASS_SECTIONS = ['A','B','C','D'];
+const STAFF_DEPTS = ['Teaching','Administration','Finance','Support','Transport'];
+const STAFF_ROLES = {
+  Teaching:       ['Class Teacher','Subject Teacher','Senior Teacher','Coordinator'],
+  Administration: ['Principal','Vice Principal','Office Admin','Receptionist'],
+  Finance:        ['Accountant','Fee Manager'],
+  Support:        ['Lab Assistant','Librarian','IT Support'],
+  Transport:      ['Transport Manager','Driver'],
+};
+// FNV-1a string hash -> non-zero seed, so each tenant gets a stable roster.
+const hashSeed = (str) => { let h = 2166136261; for (let i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = Math.imul(h, 16777619); } return (h >>> 0) || 1; };
+const rosterFor = (clientId) => {
+  const client = CLIENTS.find(c => c.id === clientId) || CLIENTS[0];
+  let s = hashSeed(clientId);
+  const r = () => { s = (s * 16807) % 2147483647; return (s - 1) / 2147483646; };
+  const pk = (a) => a[Math.floor(r() * a.length)];
+  const btw = (lo, hi) => lo + Math.floor(r() * (hi - lo + 1));
+  const sfx = clientId.replace(/^tn_/, '');
+  const students = Array.from({ length: Math.min(client.students, 24) }, (_, i) => {
+    const last = pk(LAST);
+    return { id: 'st_' + sfx + '_' + (i + 1), name: pk(FIRST) + ' ' + last, grade: pk(GRADES), section: pk(CLASS_SECTIONS), roll: btw(1, 60), guardian: pk(FIRST) + ' ' + last, status: r() < 0.9 ? 'active' : 'inactive' };
+  });
+  const staff = Array.from({ length: Math.min(client.staff, 10) }, (_, i) => {
+    const dept = pk(STAFF_DEPTS); const first = pk(FIRST); const last = pk(LAST);
+    return { id: 'sf_' + sfx + '_' + (i + 1), name: first + ' ' + last, dept, role: pk(STAFF_ROLES[dept]), email: (first + '.' + last).toLowerCase() + '@' + client.slug + '.edu.in', status: r() < 0.92 ? 'active' : 'inactive' };
+  });
+  return { students, staff };
+};
+
 const TEAM = [
   { id:'u1', name:'Aanya Sharma', email:'aanya@catre.io', role:'owner', status:'active', lastLogin:'2h ago', joined:'2023-01-12' },
   { id:'u2', name:'Rohan Mehta', email:'rohan@catre.io', role:'admin', status:'active', lastLogin:'18m ago', joined:'2023-04-03' },
@@ -341,7 +376,7 @@ const SYSTEM_HEALTH = [
 
 window.DB = {
   PLANS, FEATURE_LABELS, FEATURE_GROUPS, FEATURE_CATALOG, FEATURE_TIER, FEATURE_NOTE, TIER_META, featuresForTier,
-  CLIENTS, TEAM, TICKETS, INVOICES, ONBOARDING, AUDIT,
+  CLIENTS, rosterFor, TEAM, TICKETS, INVOICES, ONBOARDING, AUDIT,
   SYSTEM_HEALTH, usageAlerts,
   dash: { counts, mrr, trialsEnding, MRR_SERIES, SIGNUP_SERIES, MONTHS,
     planMix: [
