@@ -124,10 +124,15 @@ function LoginScreen({ onLogin }) {
         React.createElement('h2', { style: { fontSize: 19, fontWeight: 700, letterSpacing: '-0.02em' } }, 'Sign in to your account'),
         React.createElement('p', { className: 'muted tiny', style: { marginTop: 4 } }, 'Platform administrators only.'),
 
-        React.createElement('div', { style: { marginTop: 18 } },
-          React.createElement(window.Segmented, { value: mode, onChange: (m) => { setMode(m); setErr(''); }, options: [
-            { value: 'password', label: 'Password' },
-            { value: 'otp', label: 'Email / Mobile OTP' }] })),
+        React.createElement('div', { style: { marginTop: 18, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6, padding: 4, background: 'var(--surface-2)', borderRadius: 11, border: '1px solid var(--border)' } },
+          [['password', 'Password', window.Icon.lock], ['otp', 'Email / Mobile OTP', window.Icon.key]].map(function (opt) {
+            var v = opt[0], label = opt[1], Ic = opt[2], on = mode === v;
+            return React.createElement('button', { key: v, type: 'button', onClick: () => { setMode(v); setErr(''); },
+              className: 'row gap6', style: { justifyContent: 'center', height: 38, borderRadius: 8, fontWeight: 650, fontSize: 12.5, cursor: 'pointer',
+                background: on ? 'var(--surface)' : 'transparent', color: on ? 'var(--text)' : 'var(--text-3)',
+                border: '1px solid ' + (on ? 'var(--border)' : 'transparent'), boxShadow: on ? '0 1px 2px rgba(0,0,0,.08)' : 'none', transition: 'all .15s' } },
+              React.createElement(Ic, { size: 14 }), label);
+          })),
 
         mode === 'password' ? passwordPanel : (otpStep === 'identify' ? otpIdentify : otpVerify),
 
