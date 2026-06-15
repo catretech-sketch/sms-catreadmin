@@ -62,7 +62,7 @@ function IdentityScreen() {
         { value: 'users', label: 'Users' }, { value: 'roles', label: 'Roles' }, { value: 'matrix', label: 'Access matrix' }] }),
       React.createElement('div', { className: 'row gap8' },
         React.createElement('span', { className: 'tiny muted' }, 'Role'),
-        React.createElement(window.Segmented, { value: roleFilter, onChange: setRoleFilter, options: roleOptions }))),
+        React.createElement(window.Segmented, { value: roleFilter, onChange: (v) => { setRoleFilter(v); setOnlyGranted(false); }, options: roleOptions }))),
 
     tab === 'users' && React.createElement(IAUsers, { team, setTeam, roleFilter, query, setQuery, canManage, setEditUser, toast, pushAudit }),
     tab === 'roles' && React.createElement(IARoles, { roleList, roleFilter, team, permEntries, roleHas }),
