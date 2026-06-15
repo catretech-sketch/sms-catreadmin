@@ -415,7 +415,7 @@ function IAMatrix({ roleList, roleFilter, permEntries, roleHas, toggleCell, canM
                   onClick: () => toggleCell(k, r.key),
                   style: { width: 26, height: 26, borderRadius: 7, border: '1.5px solid ' + (on ? r.color : 'var(--border)'), background: on ? r.color + '22' : 'transparent', color: on ? r.color : 'var(--text-3)', cursor: canManage ? 'pointer' : 'default', display: 'inline-grid', placeItems: 'center' } },
                   on ? React.createElement(Icon.check, { size: 15 }) : React.createElement('span', { style: { width: 8, height: 2, borderRadius: 2, background: 'var(--border)' } }))); }))));
-      }))));
+      })))));
 }
 
 window.IdentityScreen = IdentityScreen;
