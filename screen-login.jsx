@@ -124,7 +124,13 @@ function LoginScreen({ onLogin }) {
         React.createElement('h2', { style: { fontSize: 19, fontWeight: 700, letterSpacing: '-0.02em' } }, 'Sign in to your account'),
         React.createElement('p', { className: 'muted tiny', style: { marginTop: 4 } }, 'Platform administrators only.'),
 
-        React.createElement('div', { style: { marginTop: 18, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6, padding: 4, background: 'var(--surface-2)', borderRadius: 11, border: '1px solid var(--border)' } },
+        mode === 'password' ? passwordPanel : (otpStep === 'identify' ? otpIdentify : otpVerify),
+
+        React.createElement('div', { className: 'row gap10', style: { margin: '18px 0 10px' } },
+          React.createElement('div', { className: 'divider f1' }),
+          React.createElement('span', { className: 'tiny muted', style: { whiteSpace: 'nowrap' } }, 'Sign-in method'),
+          React.createElement('div', { className: 'divider f1' })),
+        React.createElement('div', { style: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6, padding: 4, background: 'var(--surface-2)', borderRadius: 11, border: '1px solid var(--border)' } },
           [['password', 'Password', window.Icon.lock], ['otp', 'Email / Mobile OTP', window.Icon.key]].map(function (opt) {
             var v = opt[0], label = opt[1], Ic = opt[2], on = mode === v;
             return React.createElement('button', { key: v, type: 'button', onClick: () => { setMode(v); setErr(''); },
@@ -133,8 +139,6 @@ function LoginScreen({ onLogin }) {
                 border: '1px solid ' + (on ? 'var(--border)' : 'transparent'), boxShadow: on ? '0 1px 2px rgba(0,0,0,.08)' : 'none', transition: 'all .15s' } },
               React.createElement(Ic, { size: 14 }), label);
           })),
-
-        mode === 'password' ? passwordPanel : (otpStep === 'identify' ? otpIdentify : otpVerify),
 
         React.createElement('div', { className: 'row gap10', style: { margin: '22px 0 14px' } },
           React.createElement('div', { className: 'divider f1' }),
