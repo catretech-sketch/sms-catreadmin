@@ -46,7 +46,7 @@ Add directly after it:
    The panel only stores aggregate counts per tenant, so this fabricates
    a deterministic, representative roster for a school's detail page. */
 const GRADES = ['Grade 1','Grade 2','Grade 3','Grade 4','Grade 5','Grade 6','Grade 7','Grade 8','Grade 9','Grade 10','Grade 11','Grade 12'];
-const SECTIONS = ['A','B','C','D'];
+const CLASS_SECTIONS = ['A','B','C','D'];  // NOTE: `SECTIONS` already exists in data.jsx — do not reuse it
 const STAFF_DEPTS = ['Teaching','Administration','Finance','Support','Transport'];
 const STAFF_ROLES = {
   Teaching:       ['Class Teacher','Subject Teacher','Senior Teacher','Coordinator'],
@@ -66,11 +66,18 @@ const rosterFor = (clientId) => {
   const sfx = clientId.replace(/^tn_/, '');
   const students = Array.from({ length: Math.min(client.students, 24) }, (_, i) => {
     const last = pk(LAST);
-    return { id: 'st_' + sfx + '_' + (i + 1), name: pk(FIRST) + ' ' + last, grade: pk(GRADES), section: pk(SECTIONS), roll: btw(1, 60), guardian: pk(FIRST) + ' ' + last, status: r() < 0.9 ? 'active' : 'inactive' };
+    const sFirst = pk(FIRST);
+    // guardian shares the family surname but is always a different first name
+    const gFirst = FIRST[(FIRST.indexOf(sFirst) + 1 + Math.floor(r() * (FIRST.length - 1))) % FIRST.length];
+    return { id: 'st_' + sfx + '_' + (i + 1), name: sFirst + ' ' + last, grade: pk(GRADES), section: pk(CLASS_SECTIONS), roll: btw(1, 60), guardian: gFirst + ' ' + last, status: r() < 0.9 ? 'active' : 'inactive' };
   });
+  const emailSeen = {};
   const staff = Array.from({ length: Math.min(client.staff, 10) }, (_, i) => {
     const dept = pk(STAFF_DEPTS); const first = pk(FIRST); const last = pk(LAST);
-    return { id: 'sf_' + sfx + '_' + (i + 1), name: first + ' ' + last, dept, role: pk(STAFF_ROLES[dept]), email: (first + '.' + last).toLowerCase() + '@' + client.slug + '.edu.in', status: r() < 0.92 ? 'active' : 'inactive' };
+    const lp = (first + '.' + last).toLowerCase();
+    emailSeen[lp] = (emailSeen[lp] || 0) + 1;
+    const email = (emailSeen[lp] > 1 ? lp + emailSeen[lp] : lp) + '@' + client.slug + '.edu.in';
+    return { id: 'sf_' + sfx + '_' + (i + 1), name: first + ' ' + last, dept, role: pk(STAFF_ROLES[dept]), email, status: r() < 0.92 ? 'active' : 'inactive' };
   });
   return { students, staff };
 };

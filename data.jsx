@@ -269,11 +269,18 @@ const rosterFor = (clientId) => {
   const sfx = clientId.replace(/^tn_/, '');
   const students = Array.from({ length: Math.min(client.students, 24) }, (_, i) => {
     const last = pk(LAST);
-    return { id: 'st_' + sfx + '_' + (i + 1), name: pk(FIRST) + ' ' + last, grade: pk(GRADES), section: pk(CLASS_SECTIONS), roll: btw(1, 60), guardian: pk(FIRST) + ' ' + last, status: r() < 0.9 ? 'active' : 'inactive' };
+    const sFirst = pk(FIRST);
+    // guardian shares the family surname but is always a different first name
+    const gFirst = FIRST[(FIRST.indexOf(sFirst) + 1 + Math.floor(r() * (FIRST.length - 1))) % FIRST.length];
+    return { id: 'st_' + sfx + '_' + (i + 1), name: sFirst + ' ' + last, grade: pk(GRADES), section: pk(CLASS_SECTIONS), roll: btw(1, 60), guardian: gFirst + ' ' + last, status: r() < 0.9 ? 'active' : 'inactive' };
   });
+  const emailSeen = {};
   const staff = Array.from({ length: Math.min(client.staff, 10) }, (_, i) => {
     const dept = pk(STAFF_DEPTS); const first = pk(FIRST); const last = pk(LAST);
-    return { id: 'sf_' + sfx + '_' + (i + 1), name: first + ' ' + last, dept, role: pk(STAFF_ROLES[dept]), email: (first + '.' + last).toLowerCase() + '@' + client.slug + '.edu.in', status: r() < 0.92 ? 'active' : 'inactive' };
+    const lp = (first + '.' + last).toLowerCase();
+    emailSeen[lp] = (emailSeen[lp] || 0) + 1;
+    const email = (emailSeen[lp] > 1 ? lp + emailSeen[lp] : lp) + '@' + client.slug + '.edu.in';
+    return { id: 'sf_' + sfx + '_' + (i + 1), name: first + ' ' + last, dept, role: pk(STAFF_ROLES[dept]), email, status: r() < 0.92 ? 'active' : 'inactive' };
   });
   return { students, staff };
 };
