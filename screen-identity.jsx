@@ -1,8 +1,8 @@
 /* ============================================================
    Identity & Access (owner / admin)
    Users · Roles · Access Matrix — all filterable by role.
-   Reuses InviteModal / EditRoleModal from screen-team-settings.jsx
-   (loaded earlier in index.html, so they exist in global scope).
+   Reuses InviteModal from screen-team-settings.jsx
+   (loaded earlier in index.html, so it exists in global scope).
    Edits live in local state only — they do NOT rewire window.RBAC,
    to avoid self-lockout.
    ============================================================ */
@@ -102,6 +102,7 @@ function IAUsers({ team, setTeam, roleFilter, query, setQuery, canManage, setEdi
     (!q || u.name.toLowerCase().includes(q) || u.email.toLowerCase().includes(q) || u.id.toLowerCase().includes(q)));
 
   const exportCSV = () => {
+    if (!rows.length) { toast({ title: 'Nothing to export', kind: 'info' }); return; }
     const header = ['ID', 'Name', 'Email', 'Role', 'Status'].concat(permEntries.map(([, m]) => m.label));
     const data = [header].concat(rows.map(u => [u.id, u.name, u.email, ROLES[u.role].name, u.status]
       .concat(permEntries.map(([k]) => effective(u, k) ? 'Yes' : ''))));
@@ -113,7 +114,7 @@ function IAUsers({ team, setTeam, roleFilter, query, setQuery, canManage, setEdi
     toast({ title: 'Export ready', msg: 'catre-access-schedule.csv · ' + rows.length + ' users' });
   };
 
-  const overrideCount = (u) => u.overrides ? Object.keys(u.overrides).length : 0;
+  const overrideCount = (u) => u.overrides ? Object.keys(u.overrides).filter(k => u.overrides[k] !== roleHas(u.role, k)).length : 0;
 
   return React.createElement('div', { className: 'card' },
     React.createElement('div', { className: 'card-head' },
@@ -259,7 +260,9 @@ function AccessModal({ user, roleList, permEntries, roleHas, onClose, onSave }) 
           React.createElement('div', { className: 'row gap8' },
             React.createElement('span', { className: 'tiny muted', style: { fontWeight: 600 } }, 'Status'),
             React.createElement(window.StatusBadge, { status }),
-            React.createElement(Btn, { size: 'sm', variant: status === 'active' ? 'default' : 'primary', onClick: () => setStatus(s => s === 'active' ? 'deactivated' : 'active') }, status === 'active' ? 'Deactivate' : 'Activate')),
+            status === 'invited'
+              ? React.createElement('span', { className: 'tiny muted' }, 'Pending invite')
+              : React.createElement(Btn, { size: 'sm', variant: status === 'active' ? 'default' : 'primary', onClick: () => setStatus(s => s === 'active' ? 'deactivated' : 'active') }, status === 'active' ? 'Deactivate' : 'Activate')),
           overrideKeys.length > 0 && React.createElement('button', { className: 'tiny', style: { color: 'var(--accent)', fontWeight: 600, background: 'none', border: 'none', cursor: 'pointer' }, onClick: clearAll }, 'Reset all to role (' + overrideKeys.length + ')')),
         React.createElement('div', { className: 'field' },
           React.createElement('label', null, 'Role'),
