@@ -142,33 +142,42 @@ function SvgSchoolsMap({ cities }) {
     }));
 }
 
-function LeafletSchoolsMap({ cities, onPick }) {
+function SchoolsMap({ cities, onPick }) {
+  const [ready, setReady] = React.useState(false);
   const ref = React.useRef(null);
   React.useEffect(() => {
     const L = window.L;
-    if (!L || !ref.current) return;
-    const map = L.map(ref.current, { scrollWheelZoom: false }).setView([22, 79.5], 4);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 18, attribution: '&copy; OpenStreetMap contributors' }).addTo(map);
-    const maxCount = Math.max.apply(null, cities.map(c => c.count).concat(1));
-    cities.forEach(c => {
-      const m = L.circleMarker([c.lat, c.lng], { radius: 8 + (c.count / maxCount) * 18, color: '#7c74ff', weight: 2, fillColor: '#7c74ff', fillOpacity: 0.35 }).addTo(map);
-      m.bindPopup('<b>' + c.city + '</b><br>' + c.count + ' schools · ' + c.active + ' active');
-      m.bindTooltip(String(c.count), { permanent: true, direction: 'center', className: 'sm-map-count' });
-      if (onPick) m.on('click', onPick);
-    });
-    const bounds = cities.length ? cities.map(c => [c.lat, c.lng]) : null;
-    if (bounds) map.fitBounds(bounds, { padding: [30, 30] });
-    // Leaflet renders grey/misaligned until it knows its real container size — recompute once layout settles.
-    const fix = () => { if (!ref.current) return; map.invalidateSize(false); if (bounds) map.fitBounds(bounds, { padding: [30, 30] }); };
-    const raf = requestAnimationFrame(() => requestAnimationFrame(fix));
-    const t1 = setTimeout(fix, 150);
-    const t2 = setTimeout(fix, 500);
-    let ro;
-    if (window.ResizeObserver) { ro = new ResizeObserver(fix); ro.observe(ref.current); }
-    window.addEventListener('resize', fix);
-    return () => { cancelAnimationFrame(raf); clearTimeout(t1); clearTimeout(t2); if (ro) ro.disconnect(); window.removeEventListener('resize', fix); map.remove(); };
+    if (!L || !ref.current) return; // no Leaflet (offline) → SVG overlay stays
+    let map;
+    try {
+      map = L.map(ref.current, { scrollWheelZoom: false }).setView([22, 79.5], 4);
+      const layer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 18, attribution: '&copy; OpenStreetMap contributors' });
+      layer.on('load', () => setReady(true)); // reveal OSM only once tiles actually render
+      layer.addTo(map);
+      const maxCount = Math.max.apply(null, cities.map(c => c.count).concat(1));
+      cities.forEach(c => {
+        const m = L.circleMarker([c.lat, c.lng], { radius: 8 + (c.count / maxCount) * 18, color: '#7c74ff', weight: 2, fillColor: '#7c74ff', fillOpacity: 0.35 }).addTo(map);
+        m.bindPopup('<b>' + c.city + '</b><br>' + c.count + ' schools · ' + c.active + ' active');
+        m.bindTooltip(String(c.count), { permanent: true, direction: 'center', className: 'sm-map-count' });
+        if (onPick) m.on('click', onPick);
+      });
+      const bounds = cities.length ? cities.map(c => [c.lat, c.lng]) : null;
+      // Leaflet renders grey until it knows its real container size — recompute once layout settles.
+      const fix = () => { if (!ref.current) return; map.invalidateSize(false); if (bounds) map.fitBounds(bounds, { padding: [30, 30] }); };
+      const raf = requestAnimationFrame(() => requestAnimationFrame(fix));
+      const t1 = setTimeout(fix, 150);
+      const t2 = setTimeout(fix, 600);
+      let ro;
+      if (window.ResizeObserver) { ro = new ResizeObserver(fix); ro.observe(ref.current); }
+      window.addEventListener('resize', fix);
+      return () => { cancelAnimationFrame(raf); clearTimeout(t1); clearTimeout(t2); if (ro) ro.disconnect(); window.removeEventListener('resize', fix); map.remove(); };
+    } catch (e) { try { if (map) map.remove(); } catch (_) {} }
   }, []); // eslint-disable-line
-  return React.createElement('div', { ref: ref, style: { height: 430, width: '100%', borderRadius: 12, overflow: 'hidden', isolation: 'isolate', background: 'var(--surface-2)' } });
+  // SVG India map shows instantly and stays until live OSM tiles have loaded — so it is never blank.
+  return React.createElement('div', { style: { position: 'relative', width: '100%', minHeight: 430 } },
+    React.createElement('div', { ref: ref, style: { height: 430, width: '100%', borderRadius: 12, overflow: 'hidden', isolation: 'isolate', background: 'var(--surface-2)' } }),
+    !ready && React.createElement('div', { style: { position: 'absolute', inset: 0, display: 'grid', placeItems: 'center', background: 'var(--surface)', borderRadius: 12 } },
+      React.createElement(SvgSchoolsMap, { cities: cities })));
 }
 
 function SchoolsMapCard() {
@@ -179,7 +188,6 @@ function SchoolsMapCard() {
   const cities = Object.keys(byCity).map(city => ({ city, count: byCity[city].count, active: byCity[city].active, lat: CITY_COORDS[city][0], lng: CITY_COORDS[city][1] }));
   const maxCount = Math.max.apply(null, cities.map(c => c.count).concat(1));
   const ranked = cities.slice().sort((a, b) => b.count - a.count);
-  const hasLeaflet = !!window.L;
 
   return React.createElement('div', { style: { display: 'grid', gridTemplateColumns: '1fr 320px', gap: 16, marginBottom: 16 } },
     React.createElement('div', { className: 'card' },
@@ -187,11 +195,9 @@ function SchoolsMapCard() {
         React.createElement('div', { className: 'f1' },
           React.createElement('h3', null, 'Schools across India'),
           React.createElement('div', { className: 'sub' }, DB.CLIENTS.length + ' schools · ' + cities.length + ' cities')),
-        React.createElement('span', { className: 'badge badge-slate' }, hasLeaflet ? 'OpenStreetMap' : 'Map')),
-      React.createElement('div', { className: 'card-pad', style: hasLeaflet ? { padding: 12 } : { display: 'grid', placeItems: 'center' } },
-        hasLeaflet
-          ? React.createElement(LeafletSchoolsMap, { cities: cities, onPick: () => nav.go('clients') })
-          : React.createElement(SvgSchoolsMap, { cities: cities }))),
+        React.createElement('span', { className: 'badge badge-slate' }, 'OpenStreetMap')),
+      React.createElement('div', { className: 'card-pad', style: { padding: 12 } },
+        React.createElement(SchoolsMap, { cities: cities, onPick: () => nav.go('clients') }))),
     React.createElement('div', { className: 'card' },
       React.createElement('div', { className: 'card-head' }, React.createElement('h3', null, 'Schools by city')),
       React.createElement('div', null, ranked.map((c, i) =>
