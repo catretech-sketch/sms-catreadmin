@@ -346,7 +346,7 @@ function PeopleTab({ client, canEdit }) {
 
   return React.createElement('div', { className: 'card' },
     React.createElement('div', { className: 'card-head' },
-      React.createElement(window.Segmented, { value: kind, onChange: setKind, options: [
+      React.createElement(window.Segmented, { value: kind, onChange: (v) => { setKind(v); setQuery(''); }, options: [
         { value: 'students', label: 'Students · ' + roster.students.length },
         { value: 'staff', label: 'Staff · ' + roster.staff.length }] }),
       React.createElement('div', { className: 'search-box', style: { maxWidth: 240, marginLeft: 12 } },
@@ -358,7 +358,7 @@ function PeopleTab({ client, canEdit }) {
         headers.map(h => React.createElement('th', { key: h }, h)),
         canEdit && React.createElement('th', { key: '_act', style: { width: 40 } }))),
       React.createElement('tbody', null, rows.length === 0
-        ? React.createElement('tr', null, React.createElement('td', { colSpan: headers.length + (canEdit ? 1 : 0) }, React.createElement(window.Empty, { title: 'No ' + kind + ' found', icon: Icon.user })))
+        ? React.createElement('tr', { key: '_empty' }, React.createElement('td', { colSpan: headers.length + (canEdit ? 1 : 0) }, React.createElement(window.Empty, { title: 'No ' + kind + ' found', icon: Icon.user })))
         : rows.map(p => {
             const cells = kind === 'students'
               ? [
