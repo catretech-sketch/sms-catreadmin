@@ -64,6 +64,7 @@ function toTeamMemberDTO(u) {
     id: u.id,
     name: u.name,
     email: u.email,
+    phone: u.phone,
     role: u.role,
     status: u.status,
     last_login: u.lastLogin,

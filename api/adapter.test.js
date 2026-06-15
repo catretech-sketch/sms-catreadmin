@@ -37,10 +37,11 @@ assert.strictEqual(planDTO.per_student, null);
 assert.strictEqual(planDTO.description, 'Full operations.');
 
 // ── TeamMember ──
-const member = { id: 'u1', name: 'Aanya Sharma', email: 'aanya@catre.io', role: 'owner', status: 'active', lastLogin: '2h ago', joined: '2023-01-12' };
+const member = { id: 'u1', name: 'Aanya Sharma', email: 'aanya@catre.io', phone: '+91 98201 10011', role: 'owner', status: 'active', lastLogin: '2h ago', joined: '2023-01-12' };
 const memberDTO = A.toTeamMemberDTO(member);
 sameKeys(memberDTO, C.TEAM_MEMBER_KEYS, 'TeamMember');
 assert.strictEqual(memberDTO.last_login, '2h ago');
+assert.strictEqual(memberDTO.phone, '+91 98201 10011');
 
 // ── Invoice ──
 const invoice = { id: 'INV-10480', client: 'Greenwood High', clientId: 'tn_greenwood', plan: 'Gold', amount: 14999, status: 'paid', issued: '2026-05-01', due: '2026-05-15', paidOn: '2026-05-03' };

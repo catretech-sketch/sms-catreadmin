@@ -286,15 +286,15 @@ const rosterFor = (clientId) => {
 };
 
 const TEAM = [
-  { id:'u1', name:'Aanya Sharma', email:'aanya@catre.io', role:'owner', status:'active', lastLogin:'2h ago', joined:'2023-01-12' },
-  { id:'u2', name:'Rohan Mehta', email:'rohan@catre.io', role:'admin', status:'active', lastLogin:'18m ago', joined:'2023-04-03' },
-  { id:'u3', name:'Priya Nair', email:'priya@catre.io', role:'support', status:'active', lastLogin:'5m ago', joined:'2023-06-21' },
-  { id:'u4', name:'Karthik Reddy', email:'karthik@catre.io', role:'sales', status:'active', lastLogin:'1h ago', joined:'2023-09-15' },
-  { id:'u5', name:'Neha Gupta', email:'neha@catre.io', role:'finance', status:'active', lastLogin:'3h ago', joined:'2024-02-08' },
-  { id:'u6', name:'Vivek Iyer', email:'vivek@catre.io', role:'analyst', status:'active', lastLogin:'yesterday', joined:'2024-05-30' },
-  { id:'u7', name:'Sneha Rao', email:'sneha@catre.io', role:'support', status:'active', lastLogin:'42m ago', joined:'2024-08-19' },
-  { id:'u8', name:'Aditya Verma', email:'aditya@catre.io', role:'sales', status:'invited', lastLogin:'—', joined:'2026-06-01' },
-  { id:'u9', name:'Imran Khan', email:'imran@catre.io', role:'admin', status:'deactivated', lastLogin:'34d ago', joined:'2023-03-11' },
+  { id:'u1', name:'Aanya Sharma', email:'aanya@catre.io', phone:'+91 98201 10011', role:'owner', status:'active', lastLogin:'2h ago', joined:'2023-01-12' },
+  { id:'u2', name:'Rohan Mehta', email:'rohan@catre.io', phone:'+91 98202 10022', role:'admin', status:'active', lastLogin:'18m ago', joined:'2023-04-03' },
+  { id:'u3', name:'Priya Nair', email:'priya@catre.io', phone:'+91 98203 10033', role:'support', status:'active', lastLogin:'5m ago', joined:'2023-06-21' },
+  { id:'u4', name:'Karthik Reddy', email:'karthik@catre.io', phone:'+91 98204 10044', role:'sales', status:'active', lastLogin:'1h ago', joined:'2023-09-15' },
+  { id:'u5', name:'Neha Gupta', email:'neha@catre.io', phone:'+91 98205 10055', role:'finance', status:'active', lastLogin:'3h ago', joined:'2024-02-08' },
+  { id:'u6', name:'Vivek Iyer', email:'vivek@catre.io', phone:'+91 98206 10066', role:'analyst', status:'active', lastLogin:'yesterday', joined:'2024-05-30' },
+  { id:'u7', name:'Sneha Rao', email:'sneha@catre.io', phone:'+91 98207 10077', role:'support', status:'active', lastLogin:'42m ago', joined:'2024-08-19' },
+  { id:'u8', name:'Aditya Verma', email:'aditya@catre.io', phone:'+91 98208 10088', role:'sales', status:'invited', lastLogin:'—', joined:'2026-06-01' },
+  { id:'u9', name:'Imran Khan', email:'imran@catre.io', phone:'+91 98209 10099', role:'admin', status:'deactivated', lastLogin:'34d ago', joined:'2023-03-11' },
 ];
 
 const TICKET_SUBJECTS = [

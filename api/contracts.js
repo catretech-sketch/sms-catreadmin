@@ -12,7 +12,7 @@ const PLAN_KEYS = [
   'features', 'limits', 'visibility', 'audience', 'band', 'offer', 'color', 'description',
 ];
 
-const TEAM_MEMBER_KEYS = ['id', 'name', 'email', 'role', 'status', 'last_login', 'joined'];
+const TEAM_MEMBER_KEYS = ['id', 'name', 'email', 'phone', 'role', 'status', 'last_login', 'joined'];
 
 const INVOICE_KEYS = ['id', 'tenant_id', 'tenant_name', 'plan_name', 'amount', 'status', 'issued', 'due', 'paid_on'];
 
