@@ -25,6 +25,7 @@ function IdentityScreen() {
   const [audit, setAudit] = React.useState([]);
   const [onlyGranted, setOnlyGranted] = React.useState(false);
   const [invite, setInvite] = React.useState(false);
+  const [addStaff, setAddStaff] = React.useState(false);
   const [editUser, setEditUser] = React.useState(null);
   const seq = React.useRef(0);
 
@@ -55,8 +56,9 @@ function IdentityScreen() {
       React.createElement('div', { className: 'ph-text' },
         React.createElement('h1', { className: 'page-title' }, 'Identity & Access'),
         React.createElement('p', { className: 'page-desc' }, team.length + ' users · ' + roleList.length + ' roles · ' + permEntries.length + ' permissions')),
-      React.createElement('div', { className: 'page-actions' },
-        canManage && React.createElement(Btn, { variant: 'primary', icon: Icon.userPlus, onClick: () => setInvite(true) }, 'Invite teammate'))),
+      React.createElement('div', { className: 'page-actions', style: { display: 'flex', gap: 8 } },
+        canManage && React.createElement(Btn, { variant: 'primary', icon: Icon.userPlus, onClick: () => setAddStaff(true) }, 'Add staff'),
+        canManage && React.createElement(Btn, { variant: 'default', icon: Icon.userPlus, onClick: () => setInvite(true) }, 'Invite teammate'))),
 
     React.createElement('div', { className: 'row jb', style: { flexWrap: 'wrap', gap: 12, marginBottom: 16 } },
       React.createElement(window.Segmented, { value: tab, onChange: setTab, options: [
@@ -83,6 +85,9 @@ function IdentityScreen() {
     invite && React.createElement(InviteModal, { onClose: () => setInvite(false), onInvite: (u) => {
       setTeam(t => [...t, { ...u, id: 'u' + Date.now(), status: 'invited', lastLogin: '—', joined: '2026-06-15' }]);
       toast({ title: 'Invite sent', msg: u.email }); pushAudit('invited teammate', u.email); setInvite(false); } }),
+    addStaff && React.createElement(AddStaffModal, { onClose: () => setAddStaff(false), onSave: (u) => {
+      setTeam(t => [{ ...u, id: 'u' + Date.now(), status: 'active', lastLogin: 'just now', joined: '2026-06-15' }, ...t]);
+      toast({ title: 'Staff added', msg: u.name + ' · ' + ROLES[u.role].name }); pushAudit('added staff', u.name + ' · ' + ROLES[u.role].name); setAddStaff(false); } }),
     editUser && React.createElement(AccessModal, {
       user: editUser, roleList, permEntries, roleHas,
       onClose: () => setEditUser(null),
@@ -280,4 +285,23 @@ function AccessModal({ user, roleList, permEntries, roleHas, onClose, onSave }) 
     React.createElement('div', { className: 'modal-foot' },
       React.createElement(Btn, { variant: 'ghost', onClick: onClose }, 'Cancel'),
       React.createElement(Btn, { variant: 'primary', onClick: () => onSave({ role, status, overrides }) }, 'Save access')));
+}
+
+function AddStaffModal({ onClose, onSave }) {
+  const [name, setName] = React.useState('');
+  const [email, setEmail] = React.useState('');
+  const [role, setRole] = React.useState('support');
+  const valid = name.trim() && /^[^@]+@[^@]+\.[^@]+$/.test(email);
+  return React.createElement(window.Modal, { open: true, onClose },
+    React.createElement('div', { className: 'modal-head' },
+      React.createElement('div', { className: 'mh-ic', style: { background: 'var(--accent-ghost)', color: 'var(--accent)' } }, React.createElement(window.Icon.userPlus, { size: 19 })),
+      React.createElement('div', { className: 'mh-text' }, React.createElement('h3', null, 'Add staff'), React.createElement('p', null, 'Create an active staff member with role-based access.'))),
+    React.createElement('div', { className: 'modal-body' },
+      React.createElement('div', { className: 'fc gap14' },
+        React.createElement('div', { className: 'field' }, React.createElement('label', null, 'Full name'), React.createElement('input', { className: 'input', value: name, onChange: e => setName(e.target.value), placeholder: 'Jane Doe' })),
+        React.createElement('div', { className: 'field' }, React.createElement('label', null, 'Email'), React.createElement('input', { className: 'input', type: 'email', value: email, onChange: e => setEmail(e.target.value), placeholder: 'jane@catre.io' })),
+        React.createElement('div', { className: 'field' }, React.createElement('label', null, 'Role'), React.createElement(RolePicker, { value: role, onChange: setRole })))),
+    React.createElement('div', { className: 'modal-foot' },
+      React.createElement(Btn, { variant: 'ghost', onClick: onClose }, 'Cancel'),
+      React.createElement(Btn, { variant: 'primary', disabled: !valid, onClick: () => onSave({ name, email, role }) }, 'Add staff')));
 }
