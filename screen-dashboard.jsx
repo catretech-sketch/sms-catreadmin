@@ -156,11 +156,19 @@ function LeafletSchoolsMap({ cities, onPick }) {
       m.bindTooltip(String(c.count), { permanent: true, direction: 'center', className: 'sm-map-count' });
       if (onPick) m.on('click', onPick);
     });
-    if (cities.length) map.fitBounds(cities.map(c => [c.lat, c.lng]), { padding: [30, 30] });
-    const t = setTimeout(() => map.invalidateSize(), 60);
-    return () => { clearTimeout(t); map.remove(); };
+    const bounds = cities.length ? cities.map(c => [c.lat, c.lng]) : null;
+    if (bounds) map.fitBounds(bounds, { padding: [30, 30] });
+    // Leaflet renders grey/misaligned until it knows its real container size — recompute once layout settles.
+    const fix = () => { if (!ref.current) return; map.invalidateSize(false); if (bounds) map.fitBounds(bounds, { padding: [30, 30] }); };
+    const raf = requestAnimationFrame(() => requestAnimationFrame(fix));
+    const t1 = setTimeout(fix, 150);
+    const t2 = setTimeout(fix, 500);
+    let ro;
+    if (window.ResizeObserver) { ro = new ResizeObserver(fix); ro.observe(ref.current); }
+    window.addEventListener('resize', fix);
+    return () => { cancelAnimationFrame(raf); clearTimeout(t1); clearTimeout(t2); if (ro) ro.disconnect(); window.removeEventListener('resize', fix); map.remove(); };
   }, []); // eslint-disable-line
-  return React.createElement('div', { ref: ref, style: { height: 430, width: '100%', borderRadius: 12, overflow: 'hidden', isolation: 'isolate' } });
+  return React.createElement('div', { ref: ref, style: { height: 430, width: '100%', borderRadius: 12, overflow: 'hidden', isolation: 'isolate', background: 'var(--surface-2)' } });
 }
 
 function SchoolsMapCard() {
