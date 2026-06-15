@@ -31,6 +31,7 @@ function IdentityScreen() {
   const roleList = Object.values(ROLES);
   const permEntries = Object.keys(PERMISSION_CATALOG).map(k => [k, PERMISSION_CATALOG[k]]);
   const roleHas = (r, k) => !!matrix[k] && matrix[k].includes(r);
+  const effective = (u, k) => (u.overrides && Object.prototype.hasOwnProperty.call(u.overrides, k)) ? u.overrides[k] : roleHas(u.role, k);
   const me = (team.find(u => u.role === myRole && u.status === 'active') || { name: ROLES[myRole].name + ' User' }).name;
 
   const pushAudit = (action, target) => {
@@ -64,7 +65,7 @@ function IdentityScreen() {
         React.createElement('span', { className: 'tiny muted' }, 'Role'),
         React.createElement(window.Segmented, { value: roleFilter, onChange: (v) => { setRoleFilter(v); setOnlyGranted(false); }, options: roleOptions }))),
 
-    tab === 'users' && React.createElement(IAUsers, { team, setTeam, roleFilter, query, setQuery, canManage, setEditUser, toast, pushAudit }),
+    tab === 'users' && React.createElement(IAUsers, { team, setTeam, roleFilter, query, setQuery, canManage, setEditUser, toast, pushAudit, permEntries, roleHas, effective }),
     tab === 'roles' && React.createElement(IARoles, { roleList, roleFilter, team, permEntries, roleHas }),
     tab === 'matrix' && React.createElement(IAMatrix, { roleList, roleFilter, permEntries, roleHas, toggleCell, canManage, onlyGranted, setOnlyGranted }),
 
@@ -82,10 +83,15 @@ function IdentityScreen() {
     invite && React.createElement(InviteModal, { onClose: () => setInvite(false), onInvite: (u) => {
       setTeam(t => [...t, { ...u, id: 'u' + Date.now(), status: 'invited', lastLogin: '—', joined: '2026-06-15' }]);
       toast({ title: 'Invite sent', msg: u.email }); pushAudit('invited teammate', u.email); setInvite(false); } }),
-    editUser && React.createElement(EditRoleModal, { user: editUser, onClose: () => setEditUser(null), onSave: (role) => {
-      setTeam(t => t.map(x => x.id === editUser.id ? { ...x, role } : x));
-      toast({ title: 'Role updated', msg: editUser.name + ' → ' + ROLES[role].name });
-      pushAudit('changed role of ' + editUser.name + ' to', ROLES[role].name); setEditUser(null); } }));
+    editUser && React.createElement(AccessModal, {
+      user: editUser, roleList, permEntries, roleHas,
+      onClose: () => setEditUser(null),
+      onSave: ({ role, status, overrides }) => {
+        setTeam(t => t.map(x => x.id === editUser.id ? { ...x, role, status, overrides } : x));
+        toast({ title: 'Access updated', msg: editUser.name });
+        pushAudit('edited access of ' + editUser.name, ROLES[role].name + ' · ' + status + (Object.keys(overrides).length ? ' · ' + Object.keys(overrides).length + ' override(s)' : ''));
+        setEditUser(null);
+      } }));
 }
 
 function IAUsers({ team, setTeam, roleFilter, query, setQuery, canManage, setEditUser, toast, pushAudit }) {
