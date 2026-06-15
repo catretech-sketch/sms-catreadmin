@@ -20,6 +20,7 @@ const NAV = [
     { key: 'support', label: 'Support', icon: Icon.support, perm: 'support.view', route: 'support', match: ['support','health'], badge: () => DB.TICKETS.filter(t=>t.status==='open'||t.status==='pending').length },
   ]},
   { group: 'Admin', items: [
+    { key: 'identity', label: 'Identity & Access', icon: Icon.shield, perm: 'identity.view', route: 'identity' },
     { key: 'team', label: 'Team', icon: Icon.team, perm: 'team.view', route: 'team' },
     { key: 'settings', label: 'Settings', icon: Icon.settings, perm: 'settings.view', route: 'settings' },
   ]},
@@ -29,12 +30,14 @@ const ROUTE_PERM = {
   dashboard: 'dashboard.view', clients: 'clients.view', client: 'clients.view', onboard: 'clients.view',
   onboarding: 'onboarding.view', billing: 'billing.view', plans: 'plans.view', reports: 'reports.view',
   support: 'support.view', health: 'support.view', team: 'team.view', settings: 'settings.view',
+  identity: 'identity.view',
 };
 
 const CRUMB = {
   dashboard: ['Dashboard'], clients: ['Clients'], client: ['Clients', 'Detail'], onboard: ['Clients', 'Onboard'],
   onboarding: ['Onboarding'], billing: ['Billing'], plans: ['Plans'], reports: ['Reports'], support: ['Support'],
   health: ['Support', 'System health'], team: ['Team'], settings: ['Settings'],
+  identity: ['Identity & Access'],
 };
 
 function App() {
@@ -82,6 +85,7 @@ function App() {
       case 'health': return React.createElement(window.HealthScreen);
       case 'team': return React.createElement(window.TeamScreen);
       case 'settings': return React.createElement(window.SettingsScreen);
+      case 'identity': return React.createElement(window.IdentityScreen);
       default: return React.createElement(window.Dashboard);
     }
   };
