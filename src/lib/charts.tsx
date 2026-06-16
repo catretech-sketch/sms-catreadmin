@@ -14,13 +14,13 @@ export type ChartsType = {
 const Charts = {} as ChartsType;
 
 Charts.Line = function ({ data, height = 200, color = 'var(--accent)', area = true, format = (v: number) => v, labels }) {
-  const ref = React.useRef(null);
+  const ref = React.useRef<HTMLDivElement>(null);
   const [w, setW] = React.useState(600);
   const [hover, setHover] = React.useState<number | null>(null);
   React.useEffect(() => {
     const el = ref.current; if (!el) return;
-    const ro = new ResizeObserver(() => setW((el as HTMLDivElement).clientWidth));
-    ro.observe(el); setW((el as HTMLDivElement).clientWidth);
+    const ro = new ResizeObserver(() => setW(el.clientWidth));
+    ro.observe(el); setW(el.clientWidth);
     return () => ro.disconnect();
   }, []);
   const padL = 44, padR = 12, padT = 12, padB = 24;
@@ -62,12 +62,12 @@ Charts.Line = function ({ data, height = 200, color = 'var(--accent)', area = tr
 };
 
 Charts.Bars = function ({ data, height = 200, color = 'var(--accent)', format = (v: number) => v, labels }) {
-  const ref = React.useRef(null);
+  const ref = React.useRef<HTMLDivElement>(null);
   const [w, setW] = React.useState(600);
   const [hover, setHover] = React.useState<number | null>(null);
   React.useEffect(() => {
     const el = ref.current; if (!el) return;
-    const ro = new ResizeObserver(() => setW((el as HTMLDivElement).clientWidth)); ro.observe(el); setW((el as HTMLDivElement).clientWidth);
+    const ro = new ResizeObserver(() => setW(el.clientWidth)); ro.observe(el); setW(el.clientWidth);
     return () => ro.disconnect();
   }, []);
   const padL = 44, padR = 12, padT = 12, padB = 24;

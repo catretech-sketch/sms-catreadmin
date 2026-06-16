@@ -13,8 +13,7 @@ export function LoginScreen() {
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState('');
 
-  const send = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const doSend = async () => {
     setBusy(true); setErr('');
     try {
       await requestOtp(identifier.trim());
@@ -50,7 +49,7 @@ export function LoginScreen() {
         <p className="muted tiny" style={{ marginTop: 4 }}>Platform administrators only.</p>
 
         {step === 'identify' ? (
-          <form onSubmit={send} style={{ marginTop: 18, display: 'flex', flexDirection: 'column', gap: 14 }}>
+          <form onSubmit={(e) => { e.preventDefault(); doSend(); }} style={{ marginTop: 18, display: 'flex', flexDirection: 'column', gap: 14 }}>
             <div className="field">
               <label htmlFor="email">Email</label>
               <input id="email" className="input" type="email" autoComplete="username"
@@ -75,8 +74,8 @@ export function LoginScreen() {
               {busy ? 'Verifying…' : 'Verify & sign in'}<Icon.arrowRight size={16} />
             </Btn>
             <div className="row jb tiny">
-              <a href="#" style={{ color: 'var(--accent-text)' }} onClick={(e) => { e.preventDefault(); send(e); }}>Resend code</a>
-              <a href="#" className="muted" onClick={(e) => { e.preventDefault(); setStep('identify'); setCode(''); setErr(''); }}>Use a different email</a>
+              <button type="button" style={{ color: 'var(--accent-text)' }} onClick={() => doSend()}>Resend code</button>
+              <button type="button" className="muted" onClick={() => { setStep('identify'); setCode(''); setErr(''); }}>Use a different email</button>
             </div>
           </form>
         )}

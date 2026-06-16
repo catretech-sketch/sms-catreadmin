@@ -28,7 +28,8 @@ function buildUrl(path: string, query?: RequestOpts['query']): string {
 }
 
 async function rawFetch(path: string, opts: RequestOpts, accessToken: string | null): Promise<Response> {
-  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+  const headers: Record<string, string> = {};
+  if (opts.body !== undefined) headers['Content-Type'] = 'application/json';
   const useAuth = opts.auth !== false && !NO_AUTH.has(path);
   if (useAuth && accessToken) headers.Authorization = `Bearer ${accessToken}`;
   return fetch(buildUrl(path, opts.query), {
@@ -43,8 +44,9 @@ async function parse<T>(res: Response): Promise<T> {
   try {
     const text = await res.text();
     json = text ? JSON.parse(text) : {};
-  } catch {
-    // body already consumed (e.g. second read of same Response in tests)
+  } catch (e) {
+    // only swallow body-already-consumed (TypeError); let SyntaxError propagate
+    if (!(e instanceof TypeError)) throw e;
   }
   if (!res.ok) {
     const err = (json as { error?: ErrorBody }).error;
@@ -69,6 +71,11 @@ export async function request<T>(path: string, opts: RequestOpts = {}): Promise<
     const refreshed = await tryRefresh();
     if (refreshed) {
       res = await rawFetch(path, opts, tokenStore.getAccess());
+      // If the retried request is still 401, clear tokens and fire failure callback
+      if (res.status === 401) {
+        tokenStore.clear();
+        onAuthFailure();
+      }
     } else {
       tokenStore.clear();
       onAuthFailure();

@@ -45,6 +45,21 @@ describe('request', () => {
     expect(retryHeaders.Authorization).toBe('Bearer new');
   });
 
+  it('calls onAuthFailure, clears tokens, and throws ApiError when retry after refresh still returns 401', async () => {
+    tokenStore.set({ access_token: 'old', refresh_token: 'r1' });
+    const onFail = vi.fn();
+    setOnAuthFailure(onFail);
+    vi.stubGlobal('fetch', vi.fn()
+      .mockResolvedValueOnce(jsonResponse({ error: { code: 'invalid_token', message: 'exp' } }, 401))  // original
+      .mockResolvedValueOnce(jsonResponse({ data: { access_token: 'new', refresh_token: 'r2' } }))      // /auth/refresh succeeds
+      .mockResolvedValueOnce(jsonResponse({ error: { code: 'invalid_token', message: 'still bad' } }, 401))); // retry still 401
+    const err = await request('/secure').catch((e: unknown) => e);
+    expect(err).toBeInstanceOf(ApiError);
+    expect((err as ApiError).status).toBe(401);
+    expect(onFail).toHaveBeenCalledOnce();
+    expect(tokenStore.getRefresh()).toBeNull();
+  });
+
   it('calls onAuthFailure and throws when refresh also fails', async () => {
     tokenStore.set({ access_token: 'old', refresh_token: 'r1' });
     const onFail = vi.fn();

@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { CONTRACT_KEYS } from './types';
 
-// Mirrors api/contracts.js — the canonical snake_case keys the backend exposes.
+// Verifies CONTRACT_KEYS matches the canonical snake_case shape the backend exposes.
 // This test fails if the two drift, catching contract regressions.
 const EXPECTED: Record<string, string[]> = {
   TENANT_KEYS: ['id','name','slug','country','status','plan_id','plan_name','tier','mrr',
@@ -17,7 +17,7 @@ const EXPECTED: Record<string, string[]> = {
 };
 
 describe('contract keys', () => {
-  it('match api/contracts.js exactly', () => {
+  it('CONTRACT_KEYS matches the canonical snake_case shape', () => {
     expect(CONTRACT_KEYS).toEqual(EXPECTED);
   });
 });
