@@ -1,0 +1,32 @@
+import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { render, screen, waitFor } from '@testing-library/react';
+import { App } from './App';
+import { AuthProvider } from './auth/AuthContext';
+import { ToastHost } from './components';
+import { tokenStore } from './auth/tokenStore';
+import * as authApi from './api/auth';
+
+beforeEach(() => { localStorage.clear(); tokenStore.clear(); vi.restoreAllMocks(); });
+
+function wrap() {
+  return render(<ToastHost><AuthProvider><App /></AuthProvider></ToastHost>);
+}
+
+describe('App shell', () => {
+  it('shows the login screen when anon', async () => {
+    wrap();
+    await waitFor(() => expect(screen.getByText(/sign in to your account/i)).toBeInTheDocument());
+  });
+
+  it('renders nav gated by role and no role switcher when authed', async () => {
+    tokenStore.set({ access_token: 'a1', refresh_token: 'r1' });
+    vi.spyOn(authApi, 'me').mockResolvedValue({ id: 'u1', tenant_id: null, roles: ['analyst'] });
+    wrap();
+    // analyst sees Dashboard + Reports, never Team
+    await waitFor(() => expect(screen.getByText('Dashboard')).toBeInTheDocument());
+    expect(screen.getByText('Reports')).toBeInTheDocument();
+    expect(screen.queryByText('Team')).not.toBeInTheDocument();
+    // role switcher is gone
+    expect(screen.queryByTitle(/switch role/i)).not.toBeInTheDocument();
+  });
+});
