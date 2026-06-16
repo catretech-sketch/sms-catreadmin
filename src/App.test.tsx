@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import { App } from './App';
 import { AuthProvider } from './auth/AuthContext';
 import { ToastHost } from './components';
@@ -23,9 +23,10 @@ describe('App shell', () => {
     vi.spyOn(authApi, 'me').mockResolvedValue({ id: 'u1', tenant_id: null, roles: ['analyst'] });
     wrap();
     // analyst sees Dashboard + Reports, never Team
-    await waitFor(() => expect(screen.getByText('Dashboard')).toBeInTheDocument());
-    expect(screen.getByText('Reports')).toBeInTheDocument();
-    expect(screen.queryByText('Team')).not.toBeInTheDocument();
+    const nav = within(await screen.findByRole('navigation'));
+    expect(nav.getByText('Dashboard')).toBeInTheDocument();
+    expect(nav.getByText('Reports')).toBeInTheDocument();
+    expect(nav.queryByText('Team')).not.toBeInTheDocument();
     // role switcher is gone
     expect(screen.queryByTitle(/switch role/i)).not.toBeInTheDocument();
   });

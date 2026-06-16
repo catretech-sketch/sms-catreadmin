@@ -89,7 +89,7 @@ export function App() {
     const title = (CRUMB[route.name] || [route.name]).join(' / ');
     return (
       <div className="page">
-        <h1 style={{ fontSize: 22, fontWeight: 700 }}>{title + ' · placeholder'}</h1>
+        <h1 style={{ fontSize: 22, fontWeight: 700 }}>{title}</h1>
         <p className="muted" style={{ marginTop: 8 }}>This screen is bound in a later sub-project.</p>
       </div>
     );
@@ -97,7 +97,6 @@ export function App() {
 
   const isActive = (item: NavItem) => (item.match || [item.route]).includes(route.name);
   const crumbs = CRUMB[route.name] || ['Dashboard'];
-  const crumbPath = crumbs.join(' / ');
 
   return (
     <NavCtx.Provider value={{ route, go }}>
@@ -151,9 +150,14 @@ export function App() {
             <button className="btn btn-ghost btn-icon mobile-only" onClick={() => setMobileNav(true)}>
               <Icon.menu size={18} />
             </button>
-            <nav className="crumbs" aria-label="Breadcrumb" aria-current="page">
-              {'Catre / ' + crumbPath}
-            </nav>
+            <div className="crumbs" aria-label="Breadcrumb">
+              {crumbs.map((c, i) => (
+                <span key={i} className="row gap6">
+                  {i > 0 && <span className="sep"><Icon.chevRight size={13} /></span>}
+                  {i === crumbs.length - 1 ? <b>{c}</b> : <span>{c}</span>}
+                </span>
+              ))}
+            </div>
             <div className="topbar-spacer" />
             <div className="search-box">
               <Icon.search size={15} />
