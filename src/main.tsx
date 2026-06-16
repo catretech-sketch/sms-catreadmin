@@ -1,13 +1,23 @@
 import React from 'react';
 import { createRoot } from 'react-dom/client';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { App } from './App';
+import { AuthProvider } from './auth/AuthContext';
+import { ToastHost } from './components';
 import './styles.css';
 
-function App() {
-  return <div style={{ padding: 24 }}>Catre Admin — foundation booting…</div>;
-}
+const queryClient = new QueryClient({
+  defaultOptions: { queries: { retry: 1, refetchOnWindowFocus: false } },
+});
 
 createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
-    <App />
+    <QueryClientProvider client={queryClient}>
+      <ToastHost>
+        <AuthProvider>
+          <App />
+        </AuthProvider>
+      </ToastHost>
+    </QueryClientProvider>
   </React.StrictMode>,
 );
