@@ -4,44 +4,9 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Catre · Super Admin</title>
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
-  <link rel="stylesheet" href="styles.css?v=3" />
 </head>
 <body>
   <div id="root"></div>
-
-  <template id="__bundler_thumbnail">
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
-      <rect width="100" height="100" rx="20" fill="#7c74ff"/>
-      <text x="50" y="68" font-family="sans-serif" font-size="52" font-weight="800" fill="#fff" text-anchor="middle">C</text>
-    </svg>
-  </template>
-
-  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
-  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
-  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
-
-  <!-- foundation -->
-  <script type="text/babel" src="lib.jsx"></script>
-  <script type="text/babel" src="data.jsx?v=4"></script>
-  <script type="text/babel" src="ui.jsx"></script>
-  <script type="text/babel" src="client-actions.jsx"></script>
-
-  <!-- screens -->
-  <script type="text/babel" src="screen-login.jsx?v=6"></script>
-  <script type="text/babel" src="screen-dashboard.jsx?v=3"></script>
-  <script type="text/babel" src="screen-clients.jsx"></script>
-  <script type="text/babel" src="screen-client-detail.jsx"></script>
-  <script type="text/babel" src="screen-onboard.jsx"></script>
-  <script type="text/babel" src="screen-onboarding.jsx"></script>
-  <script type="text/babel" src="screen-billing.jsx"></script>
-  <script type="text/babel" src="screen-support.jsx"></script>
-  <script type="text/babel" src="screen-team-settings.jsx"></script>
-  <script type="text/babel" src="screen-identity.jsx"></script>
-  <script type="text/babel" src="screen-reports.jsx"></script>
-
-  <!-- shell (last) -->
-  <script type="text/babel" src="app.jsx"></script>
+  <script type="module" src="/src/main.tsx"></script>
 </body>
 </html>
