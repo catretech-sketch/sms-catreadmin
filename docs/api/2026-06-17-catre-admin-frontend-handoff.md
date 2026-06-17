@@ -181,16 +181,24 @@ pending); zero references to `data.jsx`; full smoke pass.
 
 ## 11. Local dev / env
 
+Start the backend, then point the frontend at the matching port. **The API base URL differs by run mode:**
+
+| Run mode | Command (in `../sms-backend`) | API base URL |
+|---|---|---|
+| Local .NET (needs local SQL Server per `appsettings.Development.json`) | `dotnet run --project src/Sms.Api` | `http://localhost:5162/v1` |
+| Docker (needs Docker Desktop; compose maps `5080:8080`) | `docker compose up` | `http://localhost:5080/v1` |
+
 ```
-# 1. backend
-cd ../sms-backend && docker compose up        # API + SQL Server; seeds catre.tech@gmail.com admin
+# 1. backend — local .NET (default; Docker Desktop not required)
+cd ../sms-backend && dotnet run --project src/Sms.Api    # listens on http://localhost:5162; runs migrations + seeds catre.tech@gmail.com
 
 # 2. frontend
-cp .env.example .env                           # VITE_API_BASE_URL=http://localhost:8080/v1
-npm install && npm run dev
+cp .env.example .env                            # default VITE_API_BASE_URL=http://localhost:5162/v1 (use 5080 if you ran docker)
+npm install && npm run dev                       # http://localhost:5173 (already in the backend CORS allow-list)
 ```
-Log in via email-OTP as `catre.tech@gmail.com` (code arrives by the backend's email sender; SMS is a
-stub — use email). Additional team logins are created through the in-app Team invite flow.
+Vite reads env only at startup — after editing `.env`, restart `npm run dev`. Log in via email-OTP as
+`catre.tech@gmail.com` (code arrives by the backend's email sender; SMS is a stub — use email).
+Additional team logins are created through the in-app Team invite flow.
 
 ## 12. References
 

@@ -10,12 +10,19 @@ and a role-gated REST API.
 
 ## Run it
 
-Requires the backend (`../sms-backend`, `docker compose up`).
+Requires the backend (`../sms-backend`) running. Two ways, each with its own API port:
 
-    cp .env.example .env      # VITE_API_BASE_URL=http://localhost:8080/v1
+    # local .NET (default; needs local SQL Server per appsettings.Development.json)
+    cd ../sms-backend && dotnet run --project src/Sms.Api   # http://localhost:5162
+    # — or — Docker (needs Docker Desktop; compose maps 5080:8080) → http://localhost:5080
+
+Then, in this repo:
+
+    cp .env.example .env      # default VITE_API_BASE_URL=http://localhost:5162/v1 (use 5080 for docker)
     npm install
     npm run dev               # http://localhost:5173
 
+Vite reads `.env` only at startup — restart `npm run dev` after changing it.
 Sign in with email-OTP as `catre.tech@gmail.com` (code is emailed by the backend).
 Build: `npm run build`. Tests: `npm run test`.
 
