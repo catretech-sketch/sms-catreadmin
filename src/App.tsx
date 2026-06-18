@@ -5,6 +5,7 @@ import { DashboardScreen } from './screens/DashboardScreen';
 import { HealthScreen } from './screens/HealthScreen';
 import { ClientsScreen } from './screens/ClientsScreen';
 import { ClientDetailScreen } from './screens/ClientDetailScreen';
+import { ReportsScreen } from './screens/ReportsScreen';
 import { Icon, IconComponent } from './lib/icons';
 import { Menu, MenuItem, Avatar, NavCtx, Forbidden } from './components';
 import { ROLES } from './auth/rbac';
@@ -95,6 +96,7 @@ export function App() {
       case 'health':    return <HealthScreen />;
       case 'clients':   return <ClientsScreen />;
       case 'client':    return <ClientDetailScreen />;
+      case 'reports':   return <ReportsScreen />;
       default: {
         const title = (CRUMB[route.name] || [route.name]).join(' / ');
         return (
