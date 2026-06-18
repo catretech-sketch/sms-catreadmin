@@ -83,3 +83,34 @@ export async function request<T>(path: string, opts: RequestOpts = {}): Promise<
   }
   return parse<T>(res);
 }
+
+/** Like `request` but returns the full parsed JSON body (no `.data` unwrap).
+ *  Use for list endpoints whose response IS the envelope: `{ data: [...], next_cursor }`. */
+export async function listRequest<T>(path: string, opts: RequestOpts = {}): Promise<T> {
+  let res = await rawFetch(path, opts, tokenStore.getAccess());
+  if (res.status === 401 && !NO_AUTH.has(path)) {
+    const refreshed = await tryRefresh();
+    if (refreshed) {
+      res = await rawFetch(path, opts, tokenStore.getAccess());
+      if (res.status === 401) {
+        tokenStore.clear();
+        onAuthFailure();
+      }
+    } else {
+      tokenStore.clear();
+      onAuthFailure();
+    }
+  }
+  let json: unknown = {};
+  try {
+    const text = await res.text();
+    json = text ? JSON.parse(text) : {};
+  } catch (e) {
+    if (!(e instanceof TypeError)) throw e;
+  }
+  if (!res.ok) {
+    const err = (json as { error?: ErrorBody }).error;
+    throw new ApiError(res.status, err?.code ?? 'internal_error', err?.message ?? res.statusText, err?.details ?? null);
+  }
+  return json as T;
+}

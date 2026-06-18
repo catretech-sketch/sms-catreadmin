@@ -71,3 +71,12 @@ export interface ClientUsage {
   students_count: number; staff_count: number; storage_gb: number;
   limits: Record<string, number>; usage_series: number[]; usage_pct: number;
 }
+
+export interface Client {
+  id: string; name: string; slug: string; country: string; status: ClientStatus;
+  plan_id: string; plan_name: string; tier: Tier; mrr: number;
+  students_count: number; staff_count: number; storage_gb: number;
+  limits: Record<string, number>; created: string; last_active_days: number;
+  trial_ends_days: number | null; contact: string; csm: string;
+  health_score: number; gateway: string; usage_series: number[];
+}
