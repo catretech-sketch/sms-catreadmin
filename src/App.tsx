@@ -3,6 +3,7 @@ import { useAuth } from './auth/AuthContext';
 import { LoginScreen } from './screens/LoginScreen';
 import { DashboardScreen } from './screens/DashboardScreen';
 import { HealthScreen } from './screens/HealthScreen';
+import { ClientsScreen } from './screens/ClientsScreen';
 import { Icon, IconComponent } from './lib/icons';
 import { Menu, MenuItem, Avatar, NavCtx, Forbidden } from './components';
 import { ROLES } from './auth/rbac';
@@ -91,6 +92,7 @@ export function App() {
     switch (route.name) {
       case 'dashboard': return <DashboardScreen />;
       case 'health':    return <HealthScreen />;
+      case 'clients':   return <ClientsScreen />;
       default: {
         const title = (CRUMB[route.name] || [route.name]).join(' / ');
         return (
