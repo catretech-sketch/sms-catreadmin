@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { render, screen, waitFor, within } from '@testing-library/react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { App } from './App';
 import { AuthProvider } from './auth/AuthContext';
 import { ToastHost } from './components';
@@ -9,7 +10,12 @@ import * as authApi from './api/auth';
 beforeEach(() => { localStorage.clear(); tokenStore.clear(); vi.restoreAllMocks(); });
 
 function wrap() {
-  return render(<ToastHost><AuthProvider><App /></AuthProvider></ToastHost>);
+  const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  return render(
+    <QueryClientProvider client={qc}>
+      <ToastHost><AuthProvider><App /></AuthProvider></ToastHost>
+    </QueryClientProvider>
+  );
 }
 
 describe('App shell', () => {

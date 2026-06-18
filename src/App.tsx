@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from './auth/AuthContext';
 import { LoginScreen } from './screens/LoginScreen';
+import { DashboardScreen } from './screens/DashboardScreen';
+import { HealthScreen } from './screens/HealthScreen';
 import { Icon, IconComponent } from './lib/icons';
 import { Menu, MenuItem, Avatar, NavCtx, Forbidden } from './components';
 import { ROLES } from './auth/rbac';
@@ -86,13 +88,19 @@ export function App() {
   const renderScreen = () => {
     const perm = ROUTE_PERM[route.name];
     if (perm && !can(perm)) return <Forbidden action={perm} />;
-    const title = (CRUMB[route.name] || [route.name]).join(' / ');
-    return (
-      <div className="page">
-        <h1 style={{ fontSize: 22, fontWeight: 700 }}>{title}</h1>
-        <p className="muted" style={{ marginTop: 8 }}>This screen is bound in a later sub-project.</p>
-      </div>
-    );
+    switch (route.name) {
+      case 'dashboard': return <DashboardScreen />;
+      case 'health':    return <HealthScreen />;
+      default: {
+        const title = (CRUMB[route.name] || [route.name]).join(' / ');
+        return (
+          <div className="page">
+            <h1 style={{ fontSize: 22, fontWeight: 700 }}>{title}</h1>
+            <p className="muted" style={{ marginTop: 8 }}>This screen is bound in a later sub-project.</p>
+          </div>
+        );
+      }
+    }
   };
 
   const isActive = (item: NavItem) => (item.match || [item.route]).includes(route.name);
