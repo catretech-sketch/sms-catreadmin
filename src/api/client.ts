@@ -65,7 +65,7 @@ async function tryRefresh(): Promise<boolean> {
   return true;
 }
 
-export async function request<T>(path: string, opts: RequestOpts = {}): Promise<T> {
+async function executeWithRefresh(path: string, opts: RequestOpts): Promise<Response> {
   let res = await rawFetch(path, opts, tokenStore.getAccess());
   if (res.status === 401 && !NO_AUTH.has(path)) {
     const refreshed = await tryRefresh();
@@ -81,26 +81,18 @@ export async function request<T>(path: string, opts: RequestOpts = {}): Promise<
       onAuthFailure();
     }
   }
+  return res;
+}
+
+export async function request<T>(path: string, opts: RequestOpts = {}): Promise<T> {
+  const res = await executeWithRefresh(path, opts);
   return parse<T>(res);
 }
 
 /** Like `request` but returns the full parsed JSON body (no `.data` unwrap).
  *  Use for list endpoints whose response IS the envelope: `{ data: [...], next_cursor }`. */
 export async function listRequest<T>(path: string, opts: RequestOpts = {}): Promise<T> {
-  let res = await rawFetch(path, opts, tokenStore.getAccess());
-  if (res.status === 401 && !NO_AUTH.has(path)) {
-    const refreshed = await tryRefresh();
-    if (refreshed) {
-      res = await rawFetch(path, opts, tokenStore.getAccess());
-      if (res.status === 401) {
-        tokenStore.clear();
-        onAuthFailure();
-      }
-    } else {
-      tokenStore.clear();
-      onAuthFailure();
-    }
-  }
+  const res = await executeWithRefresh(path, opts);
   let json: unknown = {};
   try {
     const text = await res.text();

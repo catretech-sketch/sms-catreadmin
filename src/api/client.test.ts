@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { request, ApiError, setOnAuthFailure } from './client';
+import { request, listRequest, ApiError, setOnAuthFailure } from './client';
 import { tokenStore } from '../auth/tokenStore';
 
 function jsonResponse(body: unknown, status = 200): Response {
@@ -70,5 +70,22 @@ describe('request', () => {
     await expect(request('/secure')).rejects.toBeInstanceOf(ApiError);
     expect(onFail).toHaveBeenCalledOnce();
     expect(tokenStore.getRefresh()).toBeNull();
+  });
+});
+
+describe('listRequest', () => {
+  it('refreshes once on 401 then retries and returns the full envelope', async () => {
+    tokenStore.set({ access_token: 'old', refresh_token: 'r1' });
+    const envelope = { data: [{ id: 1 }], next_cursor: 'abc' };
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(jsonResponse({ error: { code: 'invalid_token', message: 'exp' } }, 401)) // original
+      .mockResolvedValueOnce(jsonResponse({ data: { access_token: 'new', refresh_token: 'r2' } }))     // /auth/refresh
+      .mockResolvedValueOnce(jsonResponse(envelope));                                                   // retry
+    vi.stubGlobal('fetch', fetchMock);
+    const out = await listRequest<typeof envelope>('/items');
+    expect(out).toEqual(envelope);
+    expect(tokenStore.getAccess()).toBe('new');
+    const retryHeaders = (fetchMock.mock.calls[2][1] as RequestInit).headers as Record<string, string>;
+    expect(retryHeaders.Authorization).toBe('Bearer new');
   });
 });
