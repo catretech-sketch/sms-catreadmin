@@ -14,6 +14,12 @@ const EXPECTED: Record<string, string[]> = {
   SUPPORT_TICKET_KEYS: ['id','subject','tenant_id','tenant_name','status','priority','assignee','created','updated','messages_count'],
   ROLE_KEYS: ['key','name','description','color'],
   PERMISSION_KEYS: ['key','label','group','roles'],
+  DASHBOARD_OVERVIEW_KEYS: ['counts','mrr','trials_ending','churn_pct','months','mrr_series',
+    'signup_series','plan_mix','usage_alerts','system_health','recent_activity'],
+  REVENUE_REPORT_KEYS: ['arr','net_growth','gross_churn_pct','arpa','months','revenue_series',
+    'revenue_by_plan','plan_performance'],
+  AUDIT_LOG_KEYS: ['id','actor_id','actor_name','role','action','target','kind','time'],
+  CLIENT_USAGE_KEYS: ['students_count','staff_count','storage_gb','limits','usage_series','usage_pct'],
 };
 
 describe('contract keys', () => {
