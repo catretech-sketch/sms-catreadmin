@@ -26,6 +26,7 @@ export const CONTRACT_KEYS: Record<string, string[]> = {
   SUBSCRIPTION_KEYS: ['id','tenant_id','tenant_name','plan_id','plan_name','tier','status',
     'current_period_start','current_period_end','next_charge'],
   SUPPORT_TICKET_KEYS: ['id','subject','tenant_id','tenant_name','status','priority','assignee','created','updated','messages_count'],
+  TICKET_MESSAGE_KEYS: ['id','author','role','body','created'],
   ROLE_KEYS: ['key','name','description','color'],
   PERMISSION_KEYS: ['key','label','group','roles'],
   DASHBOARD_OVERVIEW_KEYS: ['counts','mrr','trials_ending','churn_pct','months','mrr_series',
@@ -129,3 +130,20 @@ export interface OnboardingCard {
   id: string; name: string; value: number; owner: string; age: number;
   stage: OnboardingStage; checklist: ChecklistItem[];
 }
+
+export type TicketStatus = 'open' | 'pending' | 'resolved' | 'closed';
+export type TicketPriority = 'low' | 'normal' | 'high' | 'urgent';
+export interface Ticket {
+  id: string; subject: string; tenant_id: string; tenant_name: string;
+  status: TicketStatus; priority: TicketPriority; assignee: string | null;
+  created: string; updated: string; messages_count: number;
+}
+export interface TicketMessage {
+  id: string; author: string; role: 'agent' | 'client'; body: string; created: string;
+}
+export type TicketDetail = Ticket & { messages: TicketMessage[] };
+export interface TeamMember {
+  id: string; name: string; email: string; phone: string;
+  role: Role; status: string; last_login: string; joined: string;
+}
+export interface PatchTicketBody { status?: TicketStatus; assignee?: string | null; }

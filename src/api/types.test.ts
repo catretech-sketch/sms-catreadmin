@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { CONTRACT_KEYS, type Plan, type Invoice, type Subscription, type OnboardingCard } from './types';
+import { CONTRACT_KEYS, type Plan, type Invoice, type Subscription, type OnboardingCard, type TicketMessage } from './types';
 
 // Verifies CONTRACT_KEYS matches the canonical snake_case shape the backend exposes.
 // This test fails if the two drift, catching contract regressions.
@@ -14,6 +14,7 @@ const EXPECTED: Record<string, string[]> = {
   SUBSCRIPTION_KEYS: ['id','tenant_id','tenant_name','plan_id','plan_name','tier','status',
     'current_period_start','current_period_end','next_charge'],
   SUPPORT_TICKET_KEYS: ['id','subject','tenant_id','tenant_name','status','priority','assignee','created','updated','messages_count'],
+  TICKET_MESSAGE_KEYS: ['id','author','role','body','created'],
   ROLE_KEYS: ['key','name','description','color'],
   PERMISSION_KEYS: ['key','label','group','roles'],
   DASHBOARD_OVERVIEW_KEYS: ['counts','mrr','trials_ending','churn_pct','months','mrr_series',
@@ -62,5 +63,12 @@ describe('OnboardingCard', () => {
   it('covers ONBOARDING_KEYS', () => {
     const k: Record<keyof OnboardingCard, true> = { id:true, name:true, value:true, owner:true, age:true, stage:true, checklist:true };
     expect(Object.keys(k).sort()).toEqual([...CONTRACT_KEYS.ONBOARDING_KEYS].sort());
+  });
+});
+
+describe('TicketMessage', () => {
+  it('covers TICKET_MESSAGE_KEYS', () => {
+    const k: Record<keyof TicketMessage, true> = { id:true, author:true, role:true, body:true, created:true };
+    expect(Object.keys(k).sort()).toEqual([...CONTRACT_KEYS.TICKET_MESSAGE_KEYS].sort());
   });
 });
