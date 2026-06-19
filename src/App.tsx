@@ -7,6 +7,7 @@ import { ClientsScreen } from './screens/ClientsScreen';
 import { ClientDetailScreen } from './screens/ClientDetailScreen';
 import { ReportsScreen } from './screens/ReportsScreen';
 import { OnboardWizard } from './screens/OnboardWizard';
+import { BillingScreen } from './screens/BillingScreen';
 import { Icon, IconComponent } from './lib/icons';
 import { Menu, MenuItem, Avatar, NavCtx, Forbidden } from './components';
 import { ROLES } from './auth/rbac';
@@ -99,6 +100,8 @@ export function App() {
       case 'client':    return <ClientDetailScreen />;
       case 'reports':   return <ReportsScreen />;
       case 'onboard':   return <OnboardWizard />;
+      case 'plans':     return <BillingScreen plansOnly />;
+      case 'billing':   return <BillingScreen />;
       default: {
         const title = (CRUMB[route.name] || [route.name]).join(' / ');
         return (
