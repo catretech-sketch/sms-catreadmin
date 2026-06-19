@@ -425,7 +425,7 @@ git commit -m "feat(catreadmin): client mutation hooks with invalidation (3a)"
   - `suspended` → reinstate · cancel
   - `cancelled` → start_trial
 - Each action gated with `can('clients.<key>')`; hidden when not permitted.
-- `suspend` / `cancel` open `ConfirmDialog` (prototype copy, `danger`) before firing; others fire directly.
+- every lifecycle action opens `ConfirmDialog` (prototype copy) before firing — matching the prototype, where only `change_plan` skips confirmation (modal instead); `suspend` / `cancel` additionally use `danger`.
 - `change_plan` opens `ChangePlanModal` (active plans from `usePlans`); "Update plan" disabled while selection equals `client.plan_id`.
 - Success → success toast; error → `toast({ kind:'error', msg: (e as ApiError).message })`. Buttons disable while `isPending`.
 

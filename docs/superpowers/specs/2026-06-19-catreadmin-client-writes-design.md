@@ -70,7 +70,7 @@ the reusable write pattern. Billing (3b) is the highest-value surface next.
 | Mutation layer | TanStack `useMutation` + targeted `invalidateQueries` | Per handoff §6; the pattern all later slices copy |
 | Plans here | Read-only `GET /plans` (`usePlans`) | Change-plan modal needs the list; full CRUD is 3b — don't over-build |
 | Delete / Impersonate | **Hidden** (no live endpoint) | Wire only endpoints that exist; honest UI over dead buttons |
-| Confirm gating | `ConfirmDialog` for suspend / cancel (prototype copy) | Irreversible-at-period-end / access-revoking actions need confirmation |
+| Confirm gating | `ConfirmDialog` for every lifecycle action (prototype copy); suspend/cancel use `danger` | Prototype confirms all lifecycle transitions; only `change_plan` uses a modal instead. "Keep UI same" |
 
 ## Placement & files
 
@@ -127,8 +127,10 @@ useMutation({
 })
 ```
 
-- **Confirm gating:** `suspend` / `cancel` open `ConfirmDialog` (prototype `confirm`
-  copy, `danger`) before firing. `start_trial` / `activate` / `reinstate` fire directly.
+- **Confirm gating:** every lifecycle action (`start_trial` / `activate` / `suspend` /
+  `reinstate` / `cancel`) opens `ConfirmDialog` with the prototype's `confirm` copy before
+  firing — matching the prototype, where only `change_plan` skips confirmation (modal instead).
+  `suspend` / `cancel` additionally use `danger` styling.
 - **Change plan:** `<ChangePlanModal>` lists active plans from `usePlans`; "Update plan"
   is disabled while the selection equals the current plan; on confirm → `changeClientPlan`.
 - **Error semantics:** `ApiError.code` drives the toast — `forbidden` (403),
