@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { CONTRACT_KEYS, type Plan } from './types';
+import { CONTRACT_KEYS, type Plan, type Invoice, type Subscription } from './types';
 
 // Verifies CONTRACT_KEYS matches the canonical snake_case shape the backend exposes.
 // This test fails if the two drift, catching contract regressions.
@@ -11,6 +11,8 @@ const EXPECTED: Record<string, string[]> = {
     'features','limits','visibility','audience','band','offer','color','description'],
   TEAM_MEMBER_KEYS: ['id','name','email','phone','role','status','last_login','joined'],
   INVOICE_KEYS: ['id','tenant_id','tenant_name','plan_name','amount','status','issued','due','paid_on'],
+  SUBSCRIPTION_KEYS: ['id','tenant_id','tenant_name','plan_id','plan_name','tier','status',
+    'current_period_start','current_period_end','next_charge'],
   SUPPORT_TICKET_KEYS: ['id','subject','tenant_id','tenant_name','status','priority','assignee','created','updated','messages_count'],
   ROLE_KEYS: ['key','name','description','color'],
   PERMISSION_KEYS: ['key','label','group','roles'],
@@ -37,5 +39,20 @@ describe('Plan interface', () => {
       audience: true, band: true, offer: true, color: true, description: true,
     };
     expect(Object.keys(planKeys).sort()).toEqual([...CONTRACT_KEYS.PLAN_KEYS].sort());
+  });
+});
+
+describe('billing DTOs', () => {
+  it('Invoice covers INVOICE_KEYS', () => {
+    const k: Record<keyof Invoice, true> = {
+      id:true, tenant_id:true, tenant_name:true, plan_name:true, amount:true,
+      status:true, issued:true, due:true, paid_on:true };
+    expect(Object.keys(k).sort()).toEqual([...CONTRACT_KEYS.INVOICE_KEYS].sort());
+  });
+  it('Subscription covers SUBSCRIPTION_KEYS', () => {
+    const k: Record<keyof Subscription, true> = {
+      id:true, tenant_id:true, tenant_name:true, plan_id:true, plan_name:true, tier:true,
+      status:true, current_period_start:true, current_period_end:true, next_charge:true };
+    expect(Object.keys(k).sort()).toEqual([...CONTRACT_KEYS.SUBSCRIPTION_KEYS].sort());
   });
 });

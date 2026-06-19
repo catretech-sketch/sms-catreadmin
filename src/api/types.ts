@@ -23,6 +23,8 @@ export const CONTRACT_KEYS: Record<string, string[]> = {
     'features','limits','visibility','audience','band','offer','color','description'],
   TEAM_MEMBER_KEYS: ['id','name','email','phone','role','status','last_login','joined'],
   INVOICE_KEYS: ['id','tenant_id','tenant_name','plan_name','amount','status','issued','due','paid_on'],
+  SUBSCRIPTION_KEYS: ['id','tenant_id','tenant_name','plan_id','plan_name','tier','status',
+    'current_period_start','current_period_end','next_charge'],
   SUPPORT_TICKET_KEYS: ['id','subject','tenant_id','tenant_name','status','priority','assignee','created','updated','messages_count'],
   ROLE_KEYS: ['key','name','description','color'],
   PERMISSION_KEYS: ['key','label','group','roles'],
@@ -96,3 +98,26 @@ export interface CreateClientBody {
   admin_name: string; admin_email: string; admin_phone: string;
   plan_id: string; trial_days: number;
 }
+
+export type InvoiceStatus = 'paid' | 'open' | 'past_due';
+
+export interface Invoice {
+  id: string; tenant_id: string; tenant_name: string; plan_name: string;
+  amount: number; status: InvoiceStatus; issued: string; due: string; paid_on: string | null;
+}
+
+export interface Subscription {
+  id: string; tenant_id: string; tenant_name: string; plan_id: string; plan_name: string;
+  tier: Tier; status: ClientStatus;
+  current_period_start: string; current_period_end: string; next_charge: number | null;
+}
+
+export interface CreatePlanBody {
+  name: string; band: string; pricing: 'flat' | 'per_student';
+  price: number; per_student: number; min_students: number; period: string;
+  limits: { students: number; staff: number; storage_gb: number };
+  features: string[]; feature_tiers: Record<string, string>;
+  visibility: 'published' | 'draft'; audience: 'all' | 'new' | 'exclusive';
+  offer: { label: string; pct: number } | null;
+}
+export type UpdatePlanBody = CreatePlanBody;
