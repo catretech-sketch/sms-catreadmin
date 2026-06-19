@@ -52,7 +52,7 @@ function planToDraft(p: Plan): PlanDraft {
     feature_tiers: {},
     visibility: p.visibility as 'published' | 'draft',
     audience: p.audience as 'all' | 'new' | 'exclusive',
-    offer: p.offer ? (p.offer as unknown as { label: string; pct: number }) : null,
+    offer: p.offer,
   };
 }
 
@@ -73,7 +73,6 @@ export function PlansTab(): React.ReactElement {
   const toast = useToast();
 
   const createPlan = useCreatePlan();
-  const publishPlan = usePublishPlan;
 
   const [filter, setFilter] = useState('all');
   const [editing, setEditing] = useState<PlanDraft | null>(null);
@@ -114,7 +113,7 @@ export function PlansTab(): React.ReactElement {
 
   function PlanCard({ p }: { p: Plan }) {
     const updatePlan = useUpdatePlan(p.id);
-    const pub = publishPlan(p.id);
+    const pub = usePublishPlan(p.id);
     const pr = priceLabel(p);
     const audMeta = AUD[p.audience] ?? AUD['all'];
 
@@ -173,7 +172,7 @@ export function PlansTab(): React.ReactElement {
           {p.offer && (
             <div className="row gap6" style={{ padding: '6px 9px', background: 'var(--green-bg)', borderRadius: 7, color: 'var(--green)', fontSize: 11.5, fontWeight: 600, marginBottom: 8 }}>
               <Icon.zap size={12} />
-              {(p.offer as unknown as { label: string }).label}
+              {p.offer.label}
             </div>
           )}
 

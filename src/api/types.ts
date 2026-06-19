@@ -89,7 +89,7 @@ export interface Plan {
   id: string; name: string; tier: Tier; pricing: string; price: number;
   per_student: number; min_students: number; period: string;
   features: string[]; limits: Record<string, number>;
-  visibility: string; audience: string; band: string; offer: string;
+  visibility: string; audience: string; band: string; offer: { label: string; pct: number } | null;
   color: string; description: string;
 }
 
