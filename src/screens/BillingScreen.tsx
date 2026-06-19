@@ -31,7 +31,7 @@ export function BillingScreen({ plansOnly }: { plansOnly?: boolean }): React.Rea
 
   const [tab, setTab] = useState<TabKey>(tabs[0]?.key ?? 'plans');
 
-  const pastDueQuery = useInvoices({ status: 'past_due' });
+  const pastDueQuery = useInvoices({ status: 'past_due' }, { enabled: !plansOnly });
   const pastDue = pastDueQuery.data?.pages.flatMap(p => p.data) ?? [];
 
   return (

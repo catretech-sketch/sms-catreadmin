@@ -35,6 +35,7 @@ describe('plan writes', () => {
     const f = vi.fn().mockResolvedValue(jsonResponse({ data: { id: 'pl_1' } })); vi.stubGlobal('fetch', f);
     await updatePlan('pl_1', body); const [u, i] = f.mock.calls[0];
     expect(String(u)).toContain('/plans/pl_1'); expect(i.method).toBe('PATCH');
+    expect(JSON.parse(i.body)).toEqual(body);
   });
   it('publishPlan POSTs /plans/{id}/publish with { publish }', async () => {
     const f = vi.fn().mockResolvedValue(jsonResponse({ data: { id: 'pl_1' } })); vi.stubGlobal('fetch', f);

@@ -71,27 +71,6 @@ export function PlanEditModal({ plan, onClose, onSave }: Props): React.ReactElem
     </button>
   );
 
-  // tierPill is available for internal use; referenced via void to satisfy TS unused-variable check
-  const tierPill = (tier: FeatureTier, extra?: React.CSSProperties) => (
-    <span
-      className="badge"
-      style={{
-        height: 18,
-        padding: '0 7px',
-        fontSize: 10.5,
-        fontWeight: 700,
-        letterSpacing: '.02em',
-        background: TIER_META[tier].color + '22',
-        color: TIER_META[tier].color,
-        flexShrink: 0,
-        ...(extra || {}),
-      }}
-    >
-      {TIER_META[tier].label}
-    </span>
-  );
-  void tierPill;
-
   // Tier copy shortcuts — one button per tier
   const TIER_KEYS: FeatureTier[] = ['silver', 'gold', 'platinum'];
 
