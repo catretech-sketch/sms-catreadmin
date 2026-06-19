@@ -6,6 +6,7 @@ import { HealthScreen } from './screens/HealthScreen';
 import { ClientsScreen } from './screens/ClientsScreen';
 import { ClientDetailScreen } from './screens/ClientDetailScreen';
 import { ReportsScreen } from './screens/ReportsScreen';
+import { OnboardingScreen } from './screens/OnboardingScreen';
 import { OnboardWizard } from './screens/OnboardWizard';
 import { BillingScreen } from './screens/BillingScreen';
 import { Icon, IconComponent } from './lib/icons';
@@ -99,6 +100,7 @@ export function App() {
       case 'clients':   return <ClientsScreen />;
       case 'client':    return <ClientDetailScreen />;
       case 'reports':   return <ReportsScreen />;
+      case 'onboarding': return <OnboardingScreen />;
       case 'onboard':   return <OnboardWizard />;
       case 'plans':     return <BillingScreen plansOnly />;
       case 'billing':   return <BillingScreen />;
