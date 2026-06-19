@@ -1,7 +1,6 @@
 import { request, listRequest } from './client';
 import type { Invoice, ListEnvelope } from './types';
-
-export interface InvoicesListParams { status?: string; limit?: number; }
+import type { InvoicesListParams } from './queryKeys';
 
 export function listInvoices(params: InvoicesListParams, cursor?: string): Promise<ListEnvelope<Invoice>> {
   return listRequest<ListEnvelope<Invoice>>('/invoices', { query: { ...params, limit: params.limit ?? 50, cursor } });
