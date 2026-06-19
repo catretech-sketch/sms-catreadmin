@@ -14,4 +14,7 @@ export const qk = {
   reports: {
     revenue: (params: RevenueParams) => ['reports', 'revenue', params] as const,
   },
+  plans: {
+    list: () => ['plans', 'list'] as const,
+  },
 };
