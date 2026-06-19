@@ -12,7 +12,8 @@ describe('PlanEditModal', () => {
     render(<PlanEditModal plan={seed} onClose={() => {}} onSave={onSave} />);
     const save = screen.getByText('Save plan');
     expect(save).toBeDisabled();
-    fireEvent.change(screen.getByPlaceholderText(/plan name|e\.g\./i) ?? screen.getAllByRole('textbox')[0], { target: { value: 'Diamond' } });
+    const nameInput = screen.getAllByRole('textbox')[0];
+    fireEvent.change(nameInput, { target: { value: 'Diamond' } });
     fireEvent.click(screen.getByText('Save plan'));
     expect(onSave).toHaveBeenCalled();
     expect(onSave.mock.calls[0][0].name).toBe('Diamond');

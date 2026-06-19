@@ -112,14 +112,14 @@ export function PlanEditModal({ plan, onClose, onSave }: Props): React.ReactElem
         <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 14 }}>
           <div className="field">
             <label>Plan name</label>
-            <input className="input" placeholder="Plan name" value={p.name} onChange={e => set({ name: e.target.value })} />
+            <input className="input" value={p.name} onChange={e => set({ name: e.target.value })} />
           </div>
           <div className="field">
             <label>Size band</label>
             <input
               className="input"
               value={p.band}
-              placeholder="Under 200 students"
+              placeholder="e.g. Under 200"
               onChange={e => set({ band: e.target.value })}
             />
           </div>
