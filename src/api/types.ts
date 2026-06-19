@@ -34,6 +34,7 @@ export const CONTRACT_KEYS: Record<string, string[]> = {
     'revenue_by_plan','plan_performance'],
   AUDIT_LOG_KEYS: ['id','actor_id','actor_name','role','action','target','kind','time'],
   CLIENT_USAGE_KEYS: ['students_count','staff_count','storage_gb','limits','usage_series','usage_pct'],
+  ONBOARDING_KEYS: ['id','name','value','owner','age','stage','checklist'],
 };
 
 export type AuditKind = 'suspend' | 'refund' | 'trial' | 'impersonate' | 'plan' | 'team' | 'invoice' | 'activate';
@@ -121,3 +122,10 @@ export interface CreatePlanBody {
   offer: { label: string; pct: number } | null;
 }
 export type UpdatePlanBody = CreatePlanBody;
+
+export type OnboardingStage = 'lead' | 'trial' | 'onboarding' | 'active';
+export interface ChecklistItem { label: string; done: boolean; }
+export interface OnboardingCard {
+  id: string; name: string; value: number; owner: string; age: number;
+  stage: OnboardingStage; checklist: ChecklistItem[];
+}
