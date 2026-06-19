@@ -3,6 +3,7 @@ import { useClients } from '../api/hooks/useClients';
 import { QueryBoundary } from '../components/QueryBoundary';
 import { Btn, StatusBadge, Segmented, fmt, SkeletonRows, useNav } from '../components';
 import { Icon } from '../lib/icons';
+import { useAuth } from '../auth/AuthContext';
 
 const STATUS_OPTS = [
   { value: '', label: 'All' }, { value: 'active', label: 'Active' },
@@ -12,6 +13,7 @@ const STATUS_OPTS = [
 
 export function ClientsScreen(): React.ReactElement {
   const { go } = useNav();
+  const { can } = useAuth();
   const [status, setStatus] = useState('');
   const [q, setQ] = useState('');
   const query = useClients({ status: status || undefined, q: q || undefined, sort: '-mrr' });
@@ -19,7 +21,12 @@ export function ClientsScreen(): React.ReactElement {
 
   return (
     <div className="page">
-      <h1 style={{ fontSize: 22, fontWeight: 700 }}>Clients</h1>
+      <div className="row jb">
+        <h1 style={{ fontSize: 22, fontWeight: 700 }}>Clients</h1>
+        {can('clients.start_trial') && (
+          <Btn variant="primary" icon={Icon.plus} onClick={() => go('onboard')}>Onboard client</Btn>
+        )}
+      </div>
 
       <div className="row jb" style={{ margin: '16px 0', gap: 12, flexWrap: 'wrap' }}>
         <Segmented options={STATUS_OPTS} value={status} onChange={setStatus} />

@@ -4,6 +4,7 @@ import { useClientUsage, useClientActivity } from '../api/hooks/useClients';
 import { QueryBoundary } from '../components/QueryBoundary';
 import { useNav, StatusBadge, UsageBar, fmt } from '../components';
 import { Icon } from '../lib/icons';
+import { ClientActions } from '../components/ClientActions';
 
 export function ClientDetailScreen(): React.ReactElement {
   const { route, go } = useNav();
@@ -26,7 +27,10 @@ export function ClientDetailScreen(): React.ReactElement {
                 <h1 style={{ fontSize: 22, fontWeight: 700 }}>{detail.data.name}</h1>
                 <div className="muted tiny" style={{ marginTop: 4 }}>{detail.data.country} · CSM {detail.data.csm}</div>
               </div>
-              <StatusBadge status={detail.data.status} />
+              <div className="row gap12">
+                <StatusBadge status={detail.data.status} />
+                <ClientActions client={detail.data} />
+              </div>
             </div>
 
             <div className="kpi-grid" style={{ marginTop: 16 }}>

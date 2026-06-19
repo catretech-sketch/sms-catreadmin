@@ -2,6 +2,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { ClientsScreen } from './ClientsScreen';
 
+vi.mock('../auth/AuthContext', () => ({ useAuth: () => ({ can: () => true }) }));
 vi.mock('../api/hooks/useClients', () => ({
   useClients: () => ({
     isLoading: false, isError: false,
