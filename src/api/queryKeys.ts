@@ -26,4 +26,5 @@ export const qk = {
     list: (params: InvoicesListParams) => ['invoices', 'list', params] as const,
     detail: (id: string) => ['invoices', 'detail', id] as const,
   },
+  onboarding: { list: () => ['onboarding', 'list'] as const },
 };
