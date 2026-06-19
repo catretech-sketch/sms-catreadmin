@@ -1,5 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { OnboardWizard } from './OnboardWizard';
 import { NavCtx, ToastCtx } from '../components';
 
@@ -24,5 +25,15 @@ describe('OnboardWizard', () => {
     renderWizard();
     fireEvent.click(screen.getByText('Continue'));
     expect(screen.getByText('School name is required')).toBeInTheDocument();
+  });
+
+  it('keeps focus while typing the school name (input not remounted per keystroke)', async () => {
+    const user = userEvent.setup();
+    renderWizard();
+    const input = screen.getByPlaceholderText('e.g. Greenwood High');
+    await user.click(input);
+    await user.type(input, 'Greenwood High');
+    expect((screen.getByPlaceholderText('e.g. Greenwood High') as HTMLInputElement).value).toBe('Greenwood High');
+    expect(document.activeElement).toBe(screen.getByPlaceholderText('e.g. Greenwood High'));
   });
 });

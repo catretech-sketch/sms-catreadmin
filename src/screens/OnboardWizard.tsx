@@ -15,6 +15,23 @@ type Form = {
 const COUNTRIES = ['Mumbai, MH', 'New Delhi, DL', 'Bengaluru, KA', 'Hyderabad, TS', 'Chennai, TN', 'Pune, MH', 'Kolkata, WB', 'Ahmedabad, GJ'];
 const SIZES = ['Under 200', '200–500', '500–1,200', '1,200–5,000', '5,000+'];
 
+function Field({ label, k, form, set, errors, placeholder, type = 'text', prefix, hint }: {
+  label: string; k: keyof Form; form: Form; set: (k: keyof Form, v: string | number) => void;
+  errors: Record<string, string>; placeholder?: string; type?: string; prefix?: string; hint?: string;
+}) {
+  return (
+    <div className="field">
+      <label>{label}</label>
+      {prefix
+        ? <div className="input-group" style={{ height: 38 }}><span className="tiny muted">{prefix}</span>
+            <input value={String(form[k])} onChange={e => set(k, e.target.value)} placeholder={placeholder} /></div>
+        : <input className="input" type={type} value={String(form[k])} onChange={e => set(k, e.target.value)} placeholder={placeholder} />}
+      {hint && !errors[k] && <span className="hint">{hint}</span>}
+      {errors[k] && <span className="err">{errors[k]}</span>}
+    </div>
+  );
+}
+
 export function OnboardWizard(): React.ReactElement {
   const nav = useNav();
   const toast = useToast();
@@ -65,19 +82,6 @@ export function OnboardWizard(): React.ReactElement {
 
   const plan = plans.find(p => p.id === form.plan_id) ?? plans[0];
 
-  const Field = ({ label, k, placeholder, type = 'text', prefix, hint }:
-    { label: string; k: keyof Form; placeholder?: string; type?: string; prefix?: string; hint?: string }) => (
-    <div className="field">
-      <label>{label}</label>
-      {prefix
-        ? <div className="input-group" style={{ height: 38 }}><span className="tiny muted">{prefix}</span>
-            <input value={String(form[k])} onChange={e => set(k, e.target.value)} placeholder={placeholder} /></div>
-        : <input className="input" type={type} value={String(form[k])} onChange={e => set(k, e.target.value)} placeholder={placeholder} />}
-      {hint && !errors[k] && <span className="hint">{hint}</span>}
-      {errors[k] && <span className="err">{errors[k]}</span>}
-    </div>
-  );
-
   return (
     <div className="page" style={{ maxWidth: 880 }}>
       <button className="row gap6 muted tiny" style={{ marginBottom: 14, fontWeight: 600 }} onClick={() => nav.go('clients')}>
@@ -106,8 +110,8 @@ export function OnboardWizard(): React.ReactElement {
           <div className="card-pad" style={{ minHeight: 260 }}>
             {step === 0 && (
               <div className="fc gap16">
-                <Field label="School name" k="name" placeholder="e.g. Greenwood High" />
-                <Field label="Workspace slug" k="slug" prefix="catre.app/" hint="Auto-generated from the name; editable." />
+                <Field label="School name" k="name" form={form} set={set} errors={errors} placeholder="e.g. Greenwood High" />
+                <Field label="Workspace slug" k="slug" form={form} set={set} errors={errors} prefix="catre.app/" hint="Auto-generated from the name; editable." />
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
                   <div className="field"><label>Country</label>
                     <select className="select" value={form.country} onChange={e => set('country', e.target.value)}>
@@ -123,9 +127,9 @@ export function OnboardWizard(): React.ReactElement {
 
             {step === 1 && (
               <div className="fc gap16">
-                <Field label="Admin full name" k="adminName" placeholder="e.g. Priya Sharma" />
-                <Field label="Admin email" k="adminEmail" type="email" placeholder="admin@school.edu" hint="They'll receive an invite to set up the account." />
-                <Field label="Phone (optional)" k="adminPhone" placeholder="+91 90000 00000" />
+                <Field label="Admin full name" k="adminName" form={form} set={set} errors={errors} placeholder="e.g. Priya Sharma" />
+                <Field label="Admin email" k="adminEmail" form={form} set={set} errors={errors} type="email" placeholder="admin@school.edu" hint="They'll receive an invite to set up the account." />
+                <Field label="Phone (optional)" k="adminPhone" form={form} set={set} errors={errors} placeholder="+91 90000 00000" />
               </div>
             )}
 
