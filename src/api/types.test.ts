@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { CONTRACT_KEYS } from './types';
+import { CONTRACT_KEYS, type Plan } from './types';
 
 // Verifies CONTRACT_KEYS matches the canonical snake_case shape the backend exposes.
 // This test fails if the two drift, catching contract regressions.
@@ -25,5 +25,17 @@ const EXPECTED: Record<string, string[]> = {
 describe('contract keys', () => {
   it('CONTRACT_KEYS matches the canonical snake_case shape', () => {
     expect(CONTRACT_KEYS).toEqual(EXPECTED);
+  });
+});
+
+describe('Plan interface', () => {
+  it('covers exactly the PLAN_KEYS contract', () => {
+    // A missing/extra key here fails to compile; the runtime check guards against PLAN_KEYS drift.
+    const planKeys: Record<keyof Plan, true> = {
+      id: true, name: true, tier: true, pricing: true, price: true, per_student: true,
+      min_students: true, period: true, features: true, limits: true, visibility: true,
+      audience: true, band: true, offer: true, color: true, description: true,
+    };
+    expect(Object.keys(planKeys).sort()).toEqual([...CONTRACT_KEYS.PLAN_KEYS].sort());
   });
 });

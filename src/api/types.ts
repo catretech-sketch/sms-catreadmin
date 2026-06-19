@@ -80,3 +80,19 @@ export interface Client {
   trial_ends_days: number | null; contact: string; csm: string;
   health_score: number; gateway: string; usage_series: number[];
 }
+
+export type ClientStatusAction = 'start_trial' | 'activate' | 'suspend' | 'reinstate' | 'cancel';
+
+export interface Plan {
+  id: string; name: string; tier: Tier; pricing: string; price: number;
+  per_student: number; min_students: number; period: string;
+  features: string[]; limits: Record<string, number>;
+  visibility: string; audience: string; band: string; offer: string;
+  color: string; description: string;
+}
+
+export interface CreateClientBody {
+  name: string; slug: string; country: string; size: string;
+  admin_name: string; admin_email: string; admin_phone: string;
+  plan_id: string; trial_days: number;
+}
