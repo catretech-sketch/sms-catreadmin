@@ -133,6 +133,7 @@ export function OnboardingScreen() {
 
   const handleDrop = (col: typeof COLS[number]) => {
     if (!drag || !manage) return;
+    if (drag.from === col.key) { setDrag(null); setDragOver(null); return; }
     advance.mutate(
       { id: drag.id, stage: col.key as OnboardingStage },
       {
