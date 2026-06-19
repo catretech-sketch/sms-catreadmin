@@ -2,6 +2,7 @@ export interface ClientsListParams {
   status?: string; tier?: string; q?: string; sort?: string; limit?: number;
 }
 export interface RevenueParams { months?: number; }
+export interface InvoicesListParams { status?: string; limit?: number; }
 
 export const qk = {
   dashboard: () => ['dashboard', 'overview'] as const,
@@ -16,5 +17,13 @@ export const qk = {
   },
   plans: {
     list: () => ['plans', 'list'] as const,
+    detail: (id: string) => ['plans', 'detail', id] as const,
+  },
+  subscriptions: {
+    list: () => ['subscriptions', 'list'] as const,
+  },
+  invoices: {
+    list: (params: InvoicesListParams) => ['invoices', 'list', params] as const,
+    detail: (id: string) => ['invoices', 'detail', id] as const,
   },
 };
