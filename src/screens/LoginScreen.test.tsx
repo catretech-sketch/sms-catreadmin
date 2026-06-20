@@ -33,6 +33,17 @@ describe('LoginScreen', () => {
     await waitFor(() => expect(screen.getByText('code invalid or expired')).toBeInTheDocument());
   });
 
+  it('shows "Email is not registered." and stays on the email step for an unknown email', async () => {
+    // mirrors the backend: POST /auth/otp/request → 404 not_registered for unknown emails
+    vi.spyOn(authApi, 'otpRequest').mockRejectedValue(
+      new ApiError(404, 'not_registered', 'Email is not registered.', null));
+    wrap();
+    await userEvent.type(screen.getByLabelText(/email/i), 'nobody@x.com');
+    await userEvent.click(screen.getByRole('button', { name: /send otp/i }));
+    await waitFor(() => expect(screen.getByText('Email is not registered.')).toBeInTheDocument());
+    expect(screen.queryByLabelText(/code/i)).not.toBeInTheDocument(); // no OTP step
+  });
+
   it('does not render demo logins', () => {
     wrap();
     expect(screen.queryByText(/demo logins/i)).not.toBeInTheDocument();

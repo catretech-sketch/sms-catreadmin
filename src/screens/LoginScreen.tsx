@@ -37,18 +37,34 @@ export function LoginScreen() {
 
   return (
     <div style={{ minHeight: '100%', display: 'grid', placeItems: 'center', padding: 24, background: 'var(--bg-grad)' }}>
-      <div style={{ width: '100%', maxWidth: 440, borderRadius: 18, border: '1px solid var(--border)', boxShadow: 'var(--shadow-lg)', background: 'var(--surface)', padding: '40px 38px' }}>
-        <div className="row gap10" style={{ marginBottom: 22 }}>
-          <div className="brand-mark" style={{ width: 34, height: 34 }}>C</div>
-          <div>
-            <div className="brand-name" style={{ fontSize: 16 }}>Catre</div>
-            <div className="brand-sub">Operator Control Plane</div>
+      <div className="login-card">
+        {/* left: brand panel (design layout; hidden on narrow screens) */}
+        <div className="login-brand">
+          <div className="row gap10" style={{ marginBottom: 'auto' }}>
+            <div className="brand-mark" style={{ width: 34, height: 34 }}>C</div>
+            <div>
+              <div className="brand-name" style={{ fontSize: 16 }}>Catre</div>
+              <div className="brand-sub">Operator Control Plane</div>
+            </div>
+          </div>
+          <div style={{ margin: '40px 0' }}>
+            <h1 style={{ fontSize: 25, fontWeight: 750, letterSpacing: '-0.03em', lineHeight: 1.15 }}>Run the business behind every school.</h1>
+            <p className="muted" style={{ marginTop: 12, fontSize: 13.5, lineHeight: 1.6 }}>
+              Manage client schools, onboarding, billing and support from one internal control plane.
+            </p>
+          </div>
+          <div className="row gap8" style={{ marginTop: 'auto', fontSize: 12, color: 'var(--text-3)' }}>
+            <Icon.shield size={15} />
+            <span>Platform-admin access · audited</span>
           </div>
         </div>
-        <h2 style={{ fontSize: 19, fontWeight: 700 }}>Sign in to your account</h2>
-        <p className="muted tiny" style={{ marginTop: 4 }}>Platform administrators only.</p>
 
-        {step === 'identify' ? (
+        {/* right: real email-OTP form */}
+        <div className="login-form">
+          <h2 style={{ fontSize: 19, fontWeight: 700, letterSpacing: '-0.02em' }}>Sign in to your account</h2>
+          <p className="muted tiny" style={{ marginTop: 4 }}>Platform administrators only.</p>
+
+          {step === 'identify' ? (
           <form onSubmit={(e) => { e.preventDefault(); doSend(); }} style={{ marginTop: 18, display: 'flex', flexDirection: 'column', gap: 14 }}>
             <div className="field">
               <label htmlFor="email">Email</label>
@@ -78,7 +94,8 @@ export function LoginScreen() {
               <button type="button" className="muted" onClick={() => { setStep('identify'); setCode(''); setErr(''); }}>Use a different email</button>
             </div>
           </form>
-        )}
+          )}
+        </div>
       </div>
     </div>
   );

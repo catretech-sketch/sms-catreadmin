@@ -99,6 +99,7 @@ export interface CreateClientBody {
   name: string; slug: string; country: string; size: string;
   admin_name: string; admin_email: string; admin_phone: string;
   plan_id: string; trial_days: number;
+  address?: string; status?: ClientStatus;
 }
 
 export type InvoiceStatus = 'paid' | 'open' | 'past_due';
@@ -115,7 +116,7 @@ export interface Subscription {
 }
 
 export interface CreatePlanBody {
-  name: string; band: string; pricing: 'flat' | 'per_student';
+  name: string; band: string; tier: string; pricing: 'flat' | 'per_student';
   price: number; per_student: number; min_students: number; period: string;
   limits: { students: number; staff: number; storage_gb: number };
   features: string[]; feature_tiers: Record<string, string>;

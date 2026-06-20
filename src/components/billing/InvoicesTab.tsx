@@ -14,9 +14,17 @@ export function InvoicesTab(): React.ReactElement {
   const [filter, setFilter] = useState<'all' | 'paid' | 'open' | 'past_due'>('all');
   const [refundTarget, setRefundTarget] = useState<Invoice | null>(null);
 
-  const params = filter === 'all' ? {} : { status: filter };
-  const query = useInvoices(params);
-  const invoices: Invoice[] = query.data?.pages.flatMap(p => p.data) ?? [];
+  // Load all invoices once (the API returns them in a single page — next_cursor is always null),
+  // so we can show accurate per-status counts on the chips and filter client-side.
+  const query = useInvoices({});
+  const all: Invoice[] = query.data?.pages.flatMap(p => p.data) ?? [];
+  const counts: Record<string, number> = {
+    all: all.length,
+    paid: all.filter(i => i.status === 'paid').length,
+    open: all.filter(i => i.status === 'open').length,
+    past_due: all.filter(i => i.status === 'past_due').length,
+  };
+  const invoices: Invoice[] = filter === 'all' ? all : all.filter(i => i.status === filter);
 
   const markPaid = useMarkInvoicePaid();
   const refund = useRefundInvoice();
@@ -32,7 +40,7 @@ export function InvoicesTab(): React.ReactElement {
               className={'chip' + (filter === k ? ' active' : '')}
               onClick={() => setFilter(k)}
             >
-              {labels[k]}
+              {labels[k]}<span className="tiny" style={{ opacity: 0.6 }}>{counts[k]}</span>
             </button>
           );
         })}

@@ -31,6 +31,41 @@ type Props = {
   onSave: (body: CreatePlanBody) => void;
 };
 
+const NUM = 'Greater than 0';
+
+/** Plan-level tier = the highest tier among selected features (override wins), else silver.
+ *  The backend requires a non-null `tier`; the UI models capability per-feature, so we derive it. */
+function deriveTier(features: string[], featureTiers: Record<string, string>): FeatureTier {
+  let rank = TIER_META.silver.rank;
+  for (const f of features) {
+    const t = (featureTiers[f] || FEATURE_TIER[f]) as FeatureTier;
+    const r = TIER_META[t]?.rank ?? rank;
+    if (r > rank) rank = r;
+  }
+  return (Object.keys(TIER_META) as FeatureTier[]).find(k => TIER_META[k].rank === rank) ?? 'silver';
+}
+
+/** Required-field rules. Returns a map of field key -> message; empty when valid. */
+function validate(d: PlanDraft): Record<string, string> {
+  const e: Record<string, string> = {};
+  if (!d.name.trim()) e.name = 'Required';
+  if (!d.band.trim()) e.band = 'Required';
+  if (d.pricing === 'flat') {
+    if (!(d.price > 0)) e.price = NUM;
+  } else {
+    if (!(d.per_student > 0)) e.per_student = NUM;
+    if (!(d.min_students > 0)) e.min_students = NUM;
+  }
+  if (d.offer) {
+    if (!d.offer.label.trim()) e.offer_label = 'Required';
+    if (!(d.offer.pct > 0)) e.offer_pct = NUM;
+  }
+  (['students', 'staff', 'storage_gb'] as const).forEach(k => {
+    if (!(d.limits[k] > 0)) e['limits_' + k] = NUM;
+  });
+  return e;
+}
+
 export function PlanEditModal({ plan, onClose, onSave }: Props): React.ReactElement {
   const [p, setP] = useState<PlanDraft>({
     ...plan,
@@ -39,6 +74,35 @@ export function PlanEditModal({ plan, onClose, onSave }: Props): React.ReactElem
     feature_tiers: { ...plan.feature_tiers },
     offer: plan.offer ? { ...plan.offer } : null,
   });
+
+  // Errors surface only after the first Save attempt, then update live as fields are fixed.
+  const [submitted, setSubmitted] = useState(false);
+  const errors = submitted ? validate(p) : {};
+
+  const errStyle = (k: string): React.CSSProperties | undefined =>
+    errors[k] ? { borderColor: 'var(--red-line)' } : undefined;
+
+  // Numeric fields rendered as text inputs: show blank (not 0) when unset, parse digits on input.
+  const numProps = (val: number, onNum: (n: number) => void, errKey: string) => ({
+    className: 'input mono',
+    type: 'text' as const,
+    inputMode: 'decimal' as const,
+    placeholder: '0',
+    value: val === 0 ? '' : String(val),
+    style: errStyle(errKey),
+    onChange: (e: React.ChangeEvent<HTMLInputElement>) => {
+      const raw = e.target.value.trim();
+      if (raw === '') { onNum(0); return; }
+      const n = Number(raw);
+      if (!Number.isNaN(n)) onNum(n);
+    },
+  });
+
+  function handleSave() {
+    setSubmitted(true);
+    if (Object.keys(validate(p)).length === 0)
+      onSave({ ...p, tier: deriveTier(p.features, p.feature_tiers) } as CreatePlanBody);
+  }
 
   const toggleFeat = (f: string) =>
     setP(s => ({ ...s, features: s.features.includes(f) ? s.features.filter(x => x !== f) : [...s.features, f] }));
@@ -91,16 +155,19 @@ export function PlanEditModal({ plan, onClose, onSave }: Props): React.ReactElem
         <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 14 }}>
           <div className="field">
             <label>Plan name</label>
-            <input className="input" value={p.name} onChange={e => set({ name: e.target.value })} />
+            <input className="input" value={p.name} style={errStyle('name')} onChange={e => set({ name: e.target.value })} />
+            {errors.name && <span className="err">{errors.name}</span>}
           </div>
           <div className="field">
             <label>Size band</label>
             <input
               className="input"
               value={p.band}
+              style={errStyle('band')}
               placeholder="e.g. Under 200"
               onChange={e => set({ band: e.target.value })}
             />
+            {errors.band && <span className="err">{errors.band}</span>}
           </div>
         </div>
 
@@ -115,32 +182,20 @@ export function PlanEditModal({ plan, onClose, onSave }: Props): React.ReactElem
         {p.pricing === 'flat' ? (
           <div className="field" style={{ maxWidth: 220 }}>
             <label>Price (₹/month)</label>
-            <input
-              className="input mono"
-              type="number"
-              value={p.price}
-              onChange={e => set({ price: +e.target.value })}
-            />
+            <input {...numProps(p.price, v => set({ price: v }), 'price')} />
+            {errors.price && <span className="err">{errors.price}</span>}
           </div>
         ) : (
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, maxWidth: 360 }}>
             <div className="field">
               <label>₹ / student / mo</label>
-              <input
-                className="input mono"
-                type="number"
-                value={p.per_student}
-                onChange={e => set({ per_student: +e.target.value })}
-              />
+              <input {...numProps(p.per_student, v => set({ per_student: v }), 'per_student')} />
+              {errors.per_student && <span className="err">{errors.per_student}</span>}
             </div>
             <div className="field">
               <label>Min students</label>
-              <input
-                className="input mono"
-                type="number"
-                value={p.min_students}
-                onChange={e => set({ min_students: +e.target.value })}
-              />
+              <input {...numProps(p.min_students, v => set({ min_students: v }), 'min_students')} />
+              {errors.min_students && <span className="err">{errors.min_students}</span>}
             </div>
           </div>
         )}
@@ -163,17 +218,15 @@ export function PlanEditModal({ plan, onClose, onSave }: Props): React.ReactElem
               <input
                 className="input"
                 value={p.offer.label}
+                style={errStyle('offer_label')}
                 onChange={e => set({ offer: { ...p.offer!, label: e.target.value } })}
               />
+              {errors.offer_label && <span className="err">{errors.offer_label}</span>}
             </div>
             <div className="field">
               <label>Discount %</label>
-              <input
-                className="input mono"
-                type="number"
-                value={p.offer.pct}
-                onChange={e => set({ offer: { ...p.offer!, pct: +e.target.value } })}
-              />
+              <input {...numProps(p.offer.pct, v => set({ offer: { ...p.offer!, pct: v } }), 'offer_pct')} />
+              {errors.offer_pct && <span className="err">{errors.offer_pct}</span>}
             </div>
           </div>
         )}
@@ -206,12 +259,8 @@ export function PlanEditModal({ plan, onClose, onSave }: Props): React.ReactElem
           {(['students', 'staff', 'storage_gb'] as const).map(k => (
             <div key={k} className="field">
               <label>{k === 'storage_gb' ? 'Storage (GB)' : k[0].toUpperCase() + k.slice(1)}</label>
-              <input
-                className="input mono"
-                type="number"
-                value={p.limits[k]}
-                onChange={e => set({ limits: { ...p.limits, [k]: +e.target.value } })}
-              />
+              <input {...numProps(p.limits[k], v => set({ limits: { ...p.limits, [k]: v } }), 'limits_' + k)} />
+              {errors['limits_' + k] && <span className="err">{errors['limits_' + k]}</span>}
             </div>
           ))}
         </div>
@@ -382,7 +431,7 @@ export function PlanEditModal({ plan, onClose, onSave }: Props): React.ReactElem
 
       <div className="modal-foot">
         <Btn variant="ghost" onClick={onClose}>Cancel</Btn>
-        <Btn variant="primary" disabled={!p.name} onClick={() => onSave(p as CreatePlanBody)}>Save plan</Btn>
+        <Btn variant="primary" onClick={handleSave}>Save plan</Btn>
       </div>
     </Modal>
   );

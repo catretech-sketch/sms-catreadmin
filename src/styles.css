@@ -466,3 +466,22 @@ table.tbl { width: 100%; border-collapse: collapse; font-size: 13px; }
 .leaflet-container { font: inherit; background: var(--surface-2); }
 .sm-map-count { background: transparent; border: 0; box-shadow: none; color: #fff; font-weight: 700; font-size: 11px; text-shadow: 0 1px 2px rgba(0,0,0,.55); }
 .sm-map-count::before { display: none; }
+
+/* ── Login (two-column brand panel + form; matches screen-login.jsx) ── */
+.login-card {
+  width: 100%; max-width: 880px;
+  display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  border-radius: 18px; overflow: hidden;
+  border: 1px solid var(--border); box-shadow: var(--shadow-lg); background: var(--surface);
+}
+.login-brand {
+  padding: 40px 38px;
+  background: linear-gradient(165deg, var(--surface-2), var(--surface));
+  border-right: 1px solid var(--border-soft);
+  display: flex; flex-direction: column;
+}
+.login-form { padding: 40px 38px; }
+@media (max-width: 720px) {
+  .login-card { max-width: 440px; grid-template-columns: 1fr; }
+  .login-brand { display: none; }
+}

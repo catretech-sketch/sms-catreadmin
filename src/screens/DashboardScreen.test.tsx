@@ -2,6 +2,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { DashboardScreen } from './DashboardScreen';
 
+vi.mock('../auth/AuthContext', () => ({ useAuth: () => ({ can: () => true }) }));
 vi.mock('../api/hooks/useDashboardOverview', () => ({
   useDashboardOverview: () => ({
     isLoading: false, isError: false,
@@ -18,6 +19,7 @@ vi.mock('../api/hooks/useDashboardOverview', () => ({
 describe('DashboardScreen', () => {
   it('renders the MRR KPI from live data', () => {
     render(<DashboardScreen />);
-    expect(screen.getByText(/2,50,000/)).toBeInTheDocument();
+    // MRR now shows in both the KPI card and the revenue-card header (matches the design)
+    expect(screen.getAllByText(/2,50,000/).length).toBeGreaterThan(0);
   });
 });

@@ -11,6 +11,7 @@ import { OnboardWizard } from './screens/OnboardWizard';
 import { BillingScreen } from './screens/BillingScreen';
 import { Icon, IconComponent } from './lib/icons';
 import { Menu, MenuItem, Avatar, NavCtx, Forbidden } from './components';
+import { ErrorBoundary } from './components/ErrorBoundary';
 import { ROLES } from './auth/rbac';
 
 /* ---- nav structure (ported from app.jsx) ---- */
@@ -233,7 +234,9 @@ export function App() {
             </Menu>
           </header>
 
-          <div className="content">{renderScreen()}</div>
+          <div className="content">
+            <ErrorBoundary key={route.name}>{renderScreen()}</ErrorBoundary>
+          </div>
         </div>
       </div>
     </NavCtx.Provider>

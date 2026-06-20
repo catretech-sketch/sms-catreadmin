@@ -36,4 +36,33 @@ describe('App shell', () => {
     // role switcher is gone
     expect(screen.queryByTitle(/switch role/i)).not.toBeInTheDocument();
   });
+
+  it('gives Admin the full operational nav except Team/Settings', async () => {
+    tokenStore.set({ access_token: 'a1', refresh_token: 'r1' });
+    vi.spyOn(authApi, 'me').mockResolvedValue({ id: 'u1', tenant_id: null, roles: ['admin'] });
+    wrap();
+    const nav = within(await screen.findByRole('navigation'));
+    // present for admin
+    for (const label of ['Dashboard', 'Onboarding', 'Plans', 'Billing', 'Reports', 'Support', 'Identity & Access']) {
+      expect(nav.getByText(label)).toBeInTheDocument();
+    }
+    // owner-only — hidden from admin
+    expect(nav.queryByText('Team')).not.toBeInTheDocument();
+    expect(nav.queryByText('Settings')).not.toBeInTheDocument();
+  });
+
+  it('limits Sales to revenue/clients nav — no Support, Identity, Team, or Settings', async () => {
+    tokenStore.set({ access_token: 'a1', refresh_token: 'r1' });
+    vi.spyOn(authApi, 'me').mockResolvedValue({ id: 'u1', tenant_id: null, roles: ['sales'] });
+    wrap();
+    const nav = within(await screen.findByRole('navigation'));
+    // present for sales
+    for (const label of ['Dashboard', 'Onboarding', 'Plans', 'Billing', 'Reports']) {
+      expect(nav.getByText(label)).toBeInTheDocument();
+    }
+    // not permitted for sales
+    for (const label of ['Support', 'Identity & Access', 'Team', 'Settings']) {
+      expect(nav.queryByText(label)).not.toBeInTheDocument();
+    }
+  });
 });

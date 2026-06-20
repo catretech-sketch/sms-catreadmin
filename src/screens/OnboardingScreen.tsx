@@ -32,8 +32,10 @@ type CardProps = {
 };
 
 function Card({ card, colKey, manage, dragId, onDragStart, onDragEnd, onToggle }: CardProps) {
-  const doneCount = card.checklist.filter(it => it.done).length;
-  const pct = card.checklist.length > 0 ? Math.round(doneCount / card.checklist.length * 100) : 0;
+  const checklist = card.checklist ?? [];
+  const owner = card.owner ?? '';
+  const doneCount = checklist.filter(it => it.done).length;
+  const pct = checklist.length > 0 ? Math.round(doneCount / checklist.length * 100) : 0;
   const [expand, setExpand] = useState(false);
 
   return (
@@ -63,7 +65,7 @@ function Card({ card, colKey, manage, dragId, onDragStart, onDragEnd, onToggle }
         <div className="bar" style={{ flex: 1 }}>
           <span style={{ width: pct + '%', background: pct === 100 ? 'var(--green)' : 'var(--accent)' }} />
         </div>
-        <span className="tiny mono muted">{doneCount}/{card.checklist.length}</span>
+        <span className="tiny mono muted">{doneCount}/{checklist.length}</span>
       </div>
 
       <button
@@ -78,7 +80,7 @@ function Card({ card, colKey, manage, dragId, onDragStart, onDragEnd, onToggle }
 
       {expand && (
         <div className="fc gap2" style={{ marginTop: 8, paddingTop: 8, borderTop: '1px solid var(--border-soft)' }}>
-          {card.checklist.map((it, i) => (
+          {checklist.map((it, i) => (
             <button
               key={i}
               className="row gap8"
@@ -98,8 +100,8 @@ function Card({ card, colKey, manage, dragId, onDragStart, onDragEnd, onToggle }
 
       <div className="row jb" style={{ marginTop: 10, paddingTop: 8, borderTop: '1px solid var(--border-soft)' }}>
         <span className="row gap6 tiny muted">
-          <Avatar name={card.owner} size={18} />
-          {card.owner.split(' ')[0]}
+          <Avatar name={owner} size={18} />
+          {owner.split(' ')[0]}
         </span>
         <span className="tiny muted">{card.age}d</span>
       </div>
@@ -147,7 +149,7 @@ export function OnboardingScreen() {
   const handleToggle = (card: OnboardingCard, i: number) => {
     if (!manage) return;
     patch.mutate(
-      { id: card.id, index: i, done: !card.checklist[i].done },
+      { id: card.id, index: i, done: !card.checklist?.[i]?.done },
       { onError: (e) => toast({ kind: 'error', title: 'Update failed', msg: (e as ApiError).message }) }
     );
   };

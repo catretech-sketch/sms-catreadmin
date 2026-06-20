@@ -27,6 +27,30 @@ describe('OnboardWizard', () => {
     expect(screen.getByText('School name is required')).toBeInTheDocument();
   });
 
+  it('labels location as City (not Country) and adds Address, Status, relabeled size', () => {
+    renderWizard();
+    expect(screen.getByText('City')).toBeInTheDocument();
+    expect(screen.getByText('Address')).toBeInTheDocument();
+    expect(screen.getByText('Status')).toBeInTheDocument();
+    expect(screen.getByText('School size (students)')).toBeInTheDocument();
+    expect(screen.queryByText('Country')).toBeNull();
+    expect(screen.queryByText('Approx. size')).toBeNull();
+  });
+
+  it('lets the user enter a custom trial length on the trial step', async () => {
+    const user = userEvent.setup();
+    renderWizard();
+    await user.type(screen.getByPlaceholderText('e.g. Greenwood High'), 'Greenwood');
+    fireEvent.click(screen.getByText('Continue')); // -> admin
+    await user.type(screen.getByPlaceholderText('e.g. Priya Sharma'), 'Priya');
+    await user.type(screen.getByPlaceholderText('admin@school.edu'), 'a@b.co');
+    fireEvent.click(screen.getByText('Continue')); // -> plan
+    fireEvent.click(screen.getByText('Continue')); // -> trial
+    const custom = screen.getByPlaceholderText('Custom days');
+    fireEvent.change(custom, { target: { value: '120' } });
+    expect((custom as HTMLInputElement).value).toBe('120');
+  });
+
   it('keeps focus while typing the school name (input not remounted per keystroke)', async () => {
     const user = userEvent.setup();
     renderWizard();

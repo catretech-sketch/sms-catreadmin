@@ -16,7 +16,7 @@ describe('listPlans', () => {
   });
 });
 
-const body = { name: 'X', band: '', pricing: 'flat' as const, price: 1000, per_student: 0,
+const body = { name: 'X', band: '', tier: 'silver', pricing: 'flat' as const, price: 1000, per_student: 0,
   min_students: 0, period: 'month', limits: { students: 0, staff: 0, storage_gb: 0 },
   features: [], feature_tiers: {}, visibility: 'draft' as const, audience: 'all' as const, offer: null };
 
@@ -37,9 +37,14 @@ describe('plan writes', () => {
     expect(String(u)).toContain('/plans/pl_1'); expect(i.method).toBe('PATCH');
     expect(JSON.parse(i.body)).toEqual(body);
   });
-  it('publishPlan POSTs /plans/{id}/publish with { publish }', async () => {
+  it('publishPlan POSTs /plans/{id}/publish with { visibility }', async () => {
     const f = vi.fn().mockResolvedValue(jsonResponse({ data: { id: 'pl_1' } })); vi.stubGlobal('fetch', f);
     await publishPlan('pl_1', true); const [u, i] = f.mock.calls[0];
-    expect(String(u)).toContain('/plans/pl_1/publish'); expect(JSON.parse(i.body)).toEqual({ publish: true });
+    expect(String(u)).toContain('/plans/pl_1/publish'); expect(JSON.parse(i.body)).toEqual({ visibility: 'published' });
+  });
+  it('publishPlan with publish=false sends visibility draft', async () => {
+    const f = vi.fn().mockResolvedValue(jsonResponse({ data: { id: 'pl_1' } })); vi.stubGlobal('fetch', f);
+    await publishPlan('pl_1', false);
+    expect(JSON.parse(f.mock.calls[0][1].body)).toEqual({ visibility: 'draft' });
   });
 });

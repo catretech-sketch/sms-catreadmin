@@ -4,16 +4,25 @@ import { Icon } from '../lib/icons';
 import { usePlans } from '../api/hooks/usePlans';
 import { useCreateClient } from '../api/hooks/useClientMutations';
 import type { ApiError } from '../api/ApiError';
-import type { Plan, CreateClientBody } from '../api/types';
+import type { Plan, CreateClientBody, ClientStatus } from '../api/types';
 
 type Form = {
-  name: string; slug: string; country: string; size: string;
+  name: string; slug: string; city: string; address: string; size: string; status: ClientStatus;
   adminName: string; adminEmail: string; adminPhone: string;
   plan_id: string; trial: number;
 };
 
-const COUNTRIES = ['Mumbai, MH', 'New Delhi, DL', 'Bengaluru, KA', 'Hyderabad, TS', 'Chennai, TN', 'Pune, MH', 'Kolkata, WB', 'Ahmedabad, GJ'];
+const CITIES = ['Mumbai, MH', 'New Delhi, DL', 'Bengaluru, KA', 'Hyderabad, TS', 'Chennai, TN', 'Pune, MH', 'Kolkata, WB', 'Ahmedabad, GJ'];
 const SIZES = ['Under 200', '200–500', '500–1,200', '1,200–5,000', '5,000+'];
+const STATUSES: { value: ClientStatus; label: string }[] = [
+  { value: 'trial', label: 'Trial' },
+  { value: 'active', label: 'Active' },
+];
+// Trial presets in days; 90 ≈ a quarter, 365 ≈ a year. Anything else is entered as a custom value.
+const TRIAL_PRESETS: { days: number; note: string }[] = [
+  { days: 7, note: 'week' }, { days: 14, note: 'default' }, { days: 30, note: 'month' },
+  { days: 60, note: '2 months' }, { days: 90, note: 'quarter' }, { days: 365, note: 'year' },
+];
 
 function Field({ label, k, form, set, errors, placeholder, type = 'text', prefix, hint }: {
   label: string; k: keyof Form; form: Form; set: (k: keyof Form, v: string | number) => void;
@@ -42,7 +51,7 @@ export function OnboardWizard(): React.ReactElement {
   const [step, setStep] = useState(0);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [form, setForm] = useState<Form>({
-    name: '', slug: '', country: 'Mumbai, MH', size: '',
+    name: '', slug: '', city: 'Mumbai, MH', address: '', size: '', status: 'trial',
     adminName: '', adminEmail: '', adminPhone: '', plan_id: plans[0]?.id ?? '', trial: 14,
   });
   const set = (k: keyof Form, v: string | number) =>
@@ -70,12 +79,13 @@ export function OnboardWizard(): React.ReactElement {
 
   const submit = () => {
     const body: CreateClientBody = {
-      name: form.name, slug: form.slug, country: form.country, size: form.size,
+      name: form.name, slug: form.slug, country: form.city, size: form.size,
+      address: form.address, status: form.status,
       admin_name: form.adminName, admin_email: form.adminEmail, admin_phone: form.adminPhone,
       plan_id: form.plan_id || plans[0]?.id || '', trial_days: form.trial,
     };
     create.mutate(body, {
-      onSuccess: () => { toast({ kind: 'success', title: 'Client created', msg: `${form.name} is now in trial.` }); nav.go('clients'); },
+      onSuccess: () => { toast({ kind: 'success', title: 'Client created', msg: `${form.name} is now ${form.status === 'active' ? 'active' : 'in trial'}.` }); nav.go('clients'); },
       onError: (err) => toast({ kind: 'error', title: 'Could not create client', msg: (err as ApiError).message }),
     });
   };
@@ -106,21 +116,28 @@ export function OnboardWizard(): React.ReactElement {
         </div>
 
         <div className="card">
-          <div className="card-head"><div><h3>{steps[step].title}</h3><div className="sub">{steps[step].desc}</div></div></div>
+          <div className="card-head"><div className="f1"><h3>{steps[step].title}</h3><div className="sub">{steps[step].desc}</div></div></div>
           <div className="card-pad" style={{ minHeight: 260 }}>
             {step === 0 && (
               <div className="fc gap16">
                 <Field label="School name" k="name" form={form} set={set} errors={errors} placeholder="e.g. Greenwood High" />
                 <Field label="Workspace slug" k="slug" form={form} set={set} errors={errors} prefix="catre.app/" hint="Auto-generated from the name; editable." />
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
-                  <div className="field"><label>Country</label>
-                    <select className="select" value={form.country} onChange={e => set('country', e.target.value)}>
-                      {COUNTRIES.map(c => <option key={c}>{c}</option>)}
+                  <div className="field"><label>City</label>
+                    <select className="select" value={form.city} onChange={e => set('city', e.target.value)}>
+                      {CITIES.map(c => <option key={c}>{c}</option>)}
                     </select></div>
-                  <div className="field"><label>Approx. size</label>
+                  <div className="field"><label>School size (students)</label>
                     <select className="select" value={form.size} onChange={e => set('size', e.target.value)}>
                       <option value="">Select…</option>{SIZES.map(c => <option key={c}>{c}</option>)}
                     </select></div>
+                </div>
+                <Field label="Address" k="address" form={form} set={set} errors={errors} placeholder="Street, area, PIN code" />
+                <div className="field"><label>Status</label>
+                  <select className="select" value={form.status} onChange={e => set('status', e.target.value as ClientStatus)}>
+                    {STATUSES.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
+                  </select>
+                  <span className="hint">New schools usually start in Trial.</span>
                 </div>
               </div>
             )}
@@ -156,13 +173,22 @@ export function OnboardWizard(): React.ReactElement {
               <div>
                 <label style={{ fontSize: 12.5, fontWeight: 600, color: 'var(--text-2)' }}>Trial length</label>
                 <div className="row gap8 fw" style={{ marginTop: 12 }}>
-                  {[7, 14, 30, 60].map(d => (
-                    <button key={d} onClick={() => set('trial', d)} className={'chip' + (form.trial === d ? ' active' : '')}
+                  {TRIAL_PRESETS.map(({ days, note }) => (
+                    <button key={days} onClick={() => set('trial', days)} className={'chip' + (form.trial === days ? ' active' : '')}
                       style={{ height: 'auto', padding: '14px 20px', flexDirection: 'column' }}>
-                      <span className="mono" style={{ fontSize: 22, fontWeight: 750, color: form.trial === d ? 'var(--accent-text)' : 'var(--text)' }}>{d}</span>
-                      <span className="tiny">days</span>
+                      <span className="mono" style={{ fontSize: 22, fontWeight: 750, color: form.trial === days ? 'var(--accent-text)' : 'var(--text)' }}>{days}</span>
+                      <span className="tiny">days · {note}</span>
                     </button>
                   ))}
+                </div>
+                <div className="field" style={{ marginTop: 16, maxWidth: 220 }}>
+                  <label>Custom length</label>
+                  <div className="input-group" style={{ height: 38 }}>
+                    <input type="text" inputMode="numeric" placeholder="Custom days"
+                      value={TRIAL_PRESETS.some(p => p.days === form.trial) ? '' : (form.trial || '')}
+                      onChange={e => { const n = Number(e.target.value.trim()); if (e.target.value.trim() === '' || !Number.isNaN(n)) set('trial', e.target.value.trim() === '' ? 0 : n); }} />
+                    <span className="tiny muted">days</span>
+                  </div>
                 </div>
                 <p className="tiny muted" style={{ marginTop: 16 }}>The trial begins immediately. The client can be activated any time before it ends.</p>
               </div>
@@ -178,7 +204,9 @@ export function OnboardWizard(): React.ReactElement {
                   </div>
                 </div>
                 <dl className="dl">
-                  <dt>Country</dt><dd>{form.country}</dd>
+                  <dt>City</dt><dd>{form.city}</dd>
+                  <dt>Address</dt><dd>{form.address || '—'}</dd>
+                  <dt>Status</dt><dd>{STATUSES.find(s => s.value === form.status)?.label ?? form.status}</dd>
                   <dt>Admin</dt><dd>{form.adminName || '—'} · {form.adminEmail || '—'}</dd>
                   <dt>Plan</dt><dd>{plan ? `${plan.name} · ${fmt.money(plan.price)}/mo` : '—'}</dd>
                   <dt>Trial</dt><dd>{form.trial} days</dd>

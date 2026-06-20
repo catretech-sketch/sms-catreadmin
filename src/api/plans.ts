@@ -18,5 +18,8 @@ export function updatePlan(id: string, body: UpdatePlanBody): Promise<Plan> {
 }
 
 export function publishPlan(id: string, publish: boolean): Promise<Plan> {
-  return request<Plan>(`/plans/${id}/publish`, { method: 'POST', body: { publish } });
+  return request<Plan>(`/plans/${id}/publish`, {
+    method: 'POST',
+    body: { visibility: publish ? 'published' : 'draft' },
+  });
 }
