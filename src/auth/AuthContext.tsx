@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
-import { otpRequest, otpVerify, me as fetchMe, logout as apiLogout } from '../api/auth';
+import { otpRequest, otpVerify, login as apiLogin, me as fetchMe, logout as apiLogout } from '../api/auth';
 import { setOnAuthFailure } from '../api/client';
 import { tokenStore } from './tokenStore';
 import { can as canFor } from './rbac';
@@ -13,6 +13,8 @@ interface AuthValue {
   status: Status;
   requestOtp: (identifier: string) => Promise<{ sent: boolean }>;
   verifyOtp: (identifier: string, code: string) => Promise<void>;
+  loginWithPassword: (email: string, password: string) => Promise<void>;
+  finalizeSession: () => Promise<void>;
   signOut: () => Promise<void>;
   can: (action: string) => boolean;
 }
@@ -48,6 +50,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(m); setStatus('authed');
   }, []);
 
+  const finalizeSession = useCallback(async () => {
+    const m = await fetchMe();
+    setUser(m); setStatus('authed');
+  }, []);
+
+  const loginWithPassword = useCallback(async (email: string, password: string) => {
+    await apiLogin(email, password);
+    await finalizeSession();
+  }, [finalizeSession]);
+
   const signOut = useCallback(async () => { await apiLogout(); reset(); }, [reset]);
 
   const role = user?.roles?.[0] ?? null;
@@ -55,6 +67,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     user, role, status,
     requestOtp: otpRequest,
     verifyOtp,
+    loginWithPassword,
+    finalizeSession,
     signOut,
     can: (action) => (role ? canFor(role, action) : false),
   };
