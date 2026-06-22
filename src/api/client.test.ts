@@ -73,6 +73,23 @@ describe('request', () => {
   });
 });
 
+describe('unauthenticated auth paths (NO_AUTH)', () => {
+  it('does not refresh or clear tokens on a 401 from /auth/password/reset', async () => {
+    tokenStore.set({ access_token: 'a1', refresh_token: 'r1' });
+    const onFail = vi.fn();
+    setOnAuthFailure(onFail);
+    const fetchMock = vi.fn().mockResolvedValue(
+      jsonResponse({ error: { code: 'invalid_code', message: 'code invalid or expired' } }, 401));
+    vi.stubGlobal('fetch', fetchMock);
+    await expect(request('/auth/password/reset', { method: 'POST', body: {} }))
+      .rejects.toMatchObject({ status: 401, code: 'invalid_code' });
+    // 401 here is a normal API error — no refresh attempt, no logout, tokens untouched.
+    expect(fetchMock).toHaveBeenCalledOnce();
+    expect(onFail).not.toHaveBeenCalled();
+    expect(tokenStore.getRefresh()).toBe('r1');
+  });
+});
+
 describe('listRequest', () => {
   it('refreshes once on 401 then retries and returns the full envelope', async () => {
     tokenStore.set({ access_token: 'old', refresh_token: 'r1' });

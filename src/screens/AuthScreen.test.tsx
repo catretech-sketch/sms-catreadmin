@@ -28,7 +28,7 @@ describe('AuthScreen', () => {
   });
 
   it('tells an unregistered email to contact admin from the create-password entry', async () => {
-    vi.spyOn(authApi, 'otpRequest').mockRejectedValue(new ApiError(404, 'not_registered', 'Email is not registered.', null));
+    vi.spyOn(authApi, 'passwordForgot').mockRejectedValue(new ApiError(404, 'not_registered', 'Email is not registered.', null));
     wrap();
     await userEvent.click(screen.getByRole('button', { name: /create a password/i }));
     await userEvent.type(screen.getByLabelText(/^email$/i), 'nobody@x.com');
@@ -57,7 +57,7 @@ describe('AuthScreen', () => {
   });
 
   it('shows a not-registered message and stays on the email step', async () => {
-    vi.spyOn(authApi, 'otpRequest').mockRejectedValue(new ApiError(404, 'not_registered', 'Email is not registered.', null));
+    vi.spyOn(authApi, 'passwordForgot').mockRejectedValue(new ApiError(404, 'not_registered', 'Email is not registered.', null));
     wrap();
     await userEvent.click(screen.getByRole('button', { name: /forgot password/i }));
     await userEvent.type(screen.getByLabelText(/^email$/i), 'nobody@x.com');
@@ -66,34 +66,52 @@ describe('AuthScreen', () => {
     expect(screen.queryByLabelText(/code/i)).not.toBeInTheDocument();
   });
 
-  it('completes first-time setup: email → code → set password → finalize', async () => {
-    vi.spyOn(authApi, 'otpRequest').mockResolvedValue({ sent: true });
-    vi.spyOn(authApi, 'otpVerify').mockResolvedValue({ access_token: 'a', refresh_token: 'r' });
-    const setPwSpy = vi.spyOn(authApi, 'setPassword').mockResolvedValue();
+  it('first-time setup: email → code + new password → back to sign in (no auto-login)', async () => {
+    const forgotSpy = vi.spyOn(authApi, 'passwordForgot').mockResolvedValue({ sent: true });
+    const resetSpy = vi.spyOn(authApi, 'passwordReset').mockResolvedValue();
     const meSpy = vi.spyOn(authApi, 'me').mockResolvedValue({ id: 'u1', tenant_id: null, roles: ['owner'] });
     wrap();
     await userEvent.click(screen.getByRole('button', { name: /forgot password/i }));
     await userEvent.type(screen.getByLabelText(/^email$/i), 'rohan@catre.io');
     await userEvent.click(screen.getByRole('button', { name: /send code/i }));
     await userEvent.type(await screen.findByLabelText(/code/i), '123456');
-    await userEvent.click(screen.getByRole('button', { name: /verify code/i }));
-    await userEvent.type(await screen.findByLabelText(/new password/i), 'supersecret');
+    await userEvent.type(screen.getByLabelText(/new password/i), 'supersecret');
     await userEvent.type(screen.getByLabelText(/confirm password/i), 'supersecret');
     await userEvent.click(screen.getByRole('button', { name: /set password/i }));
-    await waitFor(() => expect(setPwSpy).toHaveBeenCalledWith('supersecret'));
-    await waitFor(() => expect(meSpy).toHaveBeenCalled());
+
+    await waitFor(() => expect(resetSpy).toHaveBeenCalledWith('rohan@catre.io', '123456', 'supersecret'));
+    expect(forgotSpy).toHaveBeenCalledWith('rohan@catre.io');
+    // No auto-login: returns to the sign-in screen with a success notice, never fetches /me.
+    expect(await screen.findByText(/password set\. sign in/i)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /sign in/i })).toBeInTheDocument();
+    expect(meSpy).not.toHaveBeenCalled();
   });
 
-  it('keeps "Set password" disabled until ≥8 chars and confirm matches', async () => {
-    vi.spyOn(authApi, 'otpRequest').mockResolvedValue({ sent: true });
-    vi.spyOn(authApi, 'otpVerify').mockResolvedValue({ access_token: 'a', refresh_token: 'r' });
+  it('shows an error and stays put when the reset code is invalid', async () => {
+    vi.spyOn(authApi, 'passwordForgot').mockResolvedValue({ sent: true });
+    vi.spyOn(authApi, 'passwordReset').mockRejectedValue(new ApiError(401, 'invalid_code', 'code invalid or expired', null));
     wrap();
     await userEvent.click(screen.getByRole('button', { name: /forgot password/i }));
     await userEvent.type(screen.getByLabelText(/^email$/i), 'rohan@catre.io');
     await userEvent.click(screen.getByRole('button', { name: /send code/i }));
-    await userEvent.type(await screen.findByLabelText(/code/i), '123456');
-    await userEvent.click(screen.getByRole('button', { name: /verify code/i }));
+    await userEvent.type(await screen.findByLabelText(/code/i), '000000');
+    await userEvent.type(screen.getByLabelText(/new password/i), 'supersecret');
+    await userEvent.type(screen.getByLabelText(/confirm password/i), 'supersecret');
+    await userEvent.click(screen.getByRole('button', { name: /set password/i }));
+    await waitFor(() => expect(screen.getByText(/that code is incorrect or expired/i)).toBeInTheDocument());
+    // Still on the reset step (the new-password field is present, sign-in button is not).
+    expect(screen.getByLabelText(/new password/i)).toBeInTheDocument();
+  });
+
+  it('keeps "Set password" disabled until the code is 6 digits and the password is ≥8 and matches', async () => {
+    vi.spyOn(authApi, 'passwordForgot').mockResolvedValue({ sent: true });
+    wrap();
+    await userEvent.click(screen.getByRole('button', { name: /forgot password/i }));
+    await userEvent.type(screen.getByLabelText(/^email$/i), 'rohan@catre.io');
+    await userEvent.click(screen.getByRole('button', { name: /send code/i }));
     const btn = await screen.findByRole('button', { name: /set password/i });
+    expect(btn).toBeDisabled();
+    await userEvent.type(await screen.findByLabelText(/code/i), '123456');
     await userEvent.type(screen.getByLabelText(/new password/i), 'short');
     expect(btn).toBeDisabled();
     await userEvent.type(screen.getByLabelText(/new password/i), 'enough'); // now 'shortenough' ≥8

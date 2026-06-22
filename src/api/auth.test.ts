@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import * as client from './client';
-import { otpRequest, otpVerify, login, me } from './auth';
+import { otpRequest, otpVerify, login, me, passwordForgot, passwordReset } from './auth';
 import { tokenStore } from '../auth/tokenStore';
 
 beforeEach(() => { localStorage.clear(); tokenStore.clear(); vi.restoreAllMocks(); });
@@ -31,5 +31,18 @@ describe('auth api', () => {
     vi.spyOn(client, 'request').mockResolvedValue({ id: 'u1', tenant_id: null, roles: ['owner'] });
     const out = await me();
     expect(out.roles).toEqual(['owner']);
+  });
+
+  it('passwordForgot posts the identifier', async () => {
+    const spy = vi.spyOn(client, 'request').mockResolvedValue({ sent: true });
+    await passwordForgot('rohan@catre.io');
+    expect(spy).toHaveBeenCalledWith('/auth/password/forgot', { method: 'POST', body: { identifier: 'rohan@catre.io' } });
+  });
+
+  it('passwordReset posts identifier, code, and password', async () => {
+    const spy = vi.spyOn(client, 'request').mockResolvedValue(undefined);
+    await passwordReset('rohan@catre.io', '123456', 'supersecret');
+    expect(spy).toHaveBeenCalledWith('/auth/password/reset',
+      { method: 'POST', body: { identifier: 'rohan@catre.io', code: '123456', password: 'supersecret' } });
   });
 });

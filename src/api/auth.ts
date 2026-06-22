@@ -41,3 +41,16 @@ export async function logout(): Promise<void> {
 export async function setPassword(password: string): Promise<void> {
   await request('/auth/set-password', { method: 'POST', body: { password } });
 }
+
+/** Send an OTP to a registered email/phone so the user can set a new password.
+ *  Throws ApiError `not_registered` (404) when the identifier has no account. */
+export async function passwordForgot(identifier: string): Promise<{ sent: boolean }> {
+  return request('/auth/password/forgot', { method: 'POST', body: { identifier } });
+}
+
+/** Verify the OTP and set the new password in one call. No session is issued
+ *  (the user signs in afterwards). Throws ApiError `invalid_code` (401) for a
+ *  bad/expired code or `weak_password` (422) for a password under 8 chars. */
+export async function passwordReset(identifier: string, code: string, password: string): Promise<void> {
+  await request('/auth/password/reset', { method: 'POST', body: { identifier, code, password } });
+}

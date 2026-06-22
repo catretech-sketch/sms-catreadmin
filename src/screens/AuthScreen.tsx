@@ -1,15 +1,15 @@
 import React, { useState } from 'react';
 import { useAuth } from '../auth/AuthContext';
-import { otpRequest, otpVerify, setPassword as apiSetPassword } from '../api/auth';
+import { passwordForgot, passwordReset } from '../api/auth';
 import { Btn, useToast } from '../components';
 import { Icon } from '../lib/icons';
 import { ApiError } from '../api/client';
 
-type View = 'login' | 'recover-identify' | 'recover-verify' | 'recover-setpw';
+type View = 'login' | 'recover-identify' | 'recover-reset';
 const MIN_PW = 8;
 
 export function AuthScreen(): React.ReactElement {
-  const { loginWithPassword, finalizeSession } = useAuth();
+  const { loginWithPassword } = useAuth();
   const toast = useToast();
   const [view, setView] = useState<View>('login');
   const [email, setEmail] = useState('');
@@ -20,25 +20,26 @@ export function AuthScreen(): React.ReactElement {
   const [confirmPw, setConfirmPw] = useState('');
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState('');
-  const [pwSaved, setPwSaved] = useState(false);
+  const [notice, setNotice] = useState('');
 
   const goView = (v: View) => {
-    setView(v); setErr('');
-    setCode(''); setNewPw(''); setConfirmPw(''); setShowPw(false); setPwSaved(false);
+    setView(v); setErr(''); setNotice('');
+    setCode(''); setNewPw(''); setConfirmPw(''); setShowPw(false);
   };
 
   const doLogin = async (e: React.FormEvent) => {
-    e.preventDefault(); setBusy(true); setErr('');
+    e.preventDefault(); setBusy(true); setErr(''); setNotice('');
     try { await loginWithPassword(email.trim(), pw); }
     catch (x) { setErr(x instanceof ApiError ? 'Incorrect email or password' : 'Could not sign in. Try again.'); }
     finally { setBusy(false); }
   };
 
-  const doRequest = async (e: React.FormEvent) => {
+  // Step 1 — send the OTP to a registered identifier.
+  const doForgot = async (e: React.FormEvent) => {
     e.preventDefault(); setBusy(true); setErr('');
     try {
-      await otpRequest(email.trim());
-      goView('recover-verify');
+      await passwordForgot(email.trim());
+      goView('recover-reset');
       toast({ title: 'Code sent', msg: 'Check your email for the 6-digit code.', kind: 'info' });
     } catch (x) {
       if (x instanceof ApiError && x.code === 'not_registered') setErr("That email isn't registered. Contact your administrator.");
@@ -46,22 +47,20 @@ export function AuthScreen(): React.ReactElement {
     } finally { setBusy(false); }
   };
 
-  const doVerify = async (e: React.FormEvent) => {
-    e.preventDefault(); setBusy(true); setErr('');
-    try { await otpVerify(email.trim(), code.trim()); goView('recover-setpw'); }
-    catch (x) { setErr(x instanceof ApiError ? 'That code is incorrect or expired.' : 'Could not verify the code. Try again.'); }
-    finally { setBusy(false); }
-  };
-
+  // Step 2 — verify the code and set the new password in one call. No auto-login:
+  // on success we return to the sign-in screen for the user to log in.
   const pwValid = newPw.length >= MIN_PW && newPw === confirmPw;
-  const doSetPw = async (e: React.FormEvent) => {
-    e.preventDefault(); if (!pwValid) return; setBusy(true); setErr('');
-    let saved = pwSaved;
+  const resetValid = code.length === 6 && pwValid;
+  const doReset = async (e: React.FormEvent) => {
+    e.preventDefault(); if (!resetValid) return; setBusy(true); setErr('');
     try {
-      if (!saved) { await apiSetPassword(newPw); saved = true; setPwSaved(true); }
-      await finalizeSession();
+      await passwordReset(email.trim(), code.trim(), newPw);
+      goView('login');
+      setNotice('Password set. Sign in with your new password.');
+      toast({ title: 'Password set', msg: 'Sign in with your new password.', kind: 'success' });
     } catch (x) {
-      if (saved) setErr('Your password was saved, but sign-in didn\'t finish. Try again.');
+      if (x instanceof ApiError && x.code === 'invalid_code') setErr('That code is incorrect or expired. Request a new code.');
+      else if (x instanceof ApiError && x.code === 'weak_password') setErr(`Password must be at least ${MIN_PW} characters.`);
       else setErr(x instanceof ApiError ? x.message : 'Could not set the password. Try again.');
     } finally { setBusy(false); }
   };
@@ -103,11 +102,17 @@ export function AuthScreen(): React.ReactElement {
             <>
               <h2 style={{ fontSize: 19, fontWeight: 700, letterSpacing: '-0.02em' }}>Sign in to your account</h2>
               <p className="muted tiny" style={{ marginTop: 4 }}>Platform administrators only.</p>
+              {notice && (
+                <div className="row gap6" style={{ marginTop: 14, padding: '8px 10px', borderRadius: 8,
+                  background: 'color-mix(in srgb, var(--green) 14%, transparent)', color: 'var(--green)', fontSize: 12.5 }}>
+                  <Icon.check size={15} /><span>{notice}</span>
+                </div>
+              )}
               <form onSubmit={doLogin} style={{ marginTop: 22, display: 'flex', flexDirection: 'column', gap: 14 }}>
                 <div className="field">
                   <label htmlFor="email">Email</label>
                   <input id="email" className="input" type="email" autoComplete="username"
-                    value={email} onChange={e => { setEmail(e.target.value); setErr(''); }} placeholder="you@catre.io" />
+                    value={email} onChange={e => { setEmail(e.target.value); setErr(''); setNotice(''); }} placeholder="you@catre.io" />
                 </div>
                 <div className="field">
                   <div className="row jb">
@@ -117,7 +122,7 @@ export function AuthScreen(): React.ReactElement {
                   <div className="input-group" style={{ height: 38 }}>
                     <Icon.lock size={15} />
                     <input id="password" type={showPw ? 'text' : 'password'} autoComplete="current-password"
-                      value={pw} onChange={e => { setPw(e.target.value); setErr(''); }} />
+                      value={pw} onChange={e => { setPw(e.target.value); setErr(''); setNotice(''); }} />
                     {PwToggle}
                   </div>
                 </div>
@@ -137,7 +142,7 @@ export function AuthScreen(): React.ReactElement {
             <>
               <h2 style={{ fontSize: 19, fontWeight: 700, letterSpacing: '-0.02em' }}>Set your password</h2>
               <p className="muted tiny" style={{ marginTop: 4 }}>First time here or forgot your password? Enter your email — if it's registered, we'll send a 6-digit code to verify it's you.</p>
-              <form onSubmit={doRequest} style={{ marginTop: 22, display: 'flex', flexDirection: 'column', gap: 14 }}>
+              <form onSubmit={doForgot} style={{ marginTop: 22, display: 'flex', flexDirection: 'column', gap: 14 }}>
                 <div className="field">
                   <label htmlFor="email">Email</label>
                   <input id="email" className="input" type="email" autoComplete="username"
@@ -150,29 +155,17 @@ export function AuthScreen(): React.ReactElement {
             </>
           )}
 
-          {view === 'recover-verify' && (
+          {view === 'recover-reset' && (
             <>
-              <h2 style={{ fontSize: 19, fontWeight: 700, letterSpacing: '-0.02em' }}>Enter the code</h2>
-              <p className="muted tiny" style={{ marginTop: 4 }}>We sent a 6-digit code to {email}.</p>
-              <form onSubmit={doVerify} style={{ marginTop: 22, display: 'flex', flexDirection: 'column', gap: 14 }}>
+              <h2 style={{ fontSize: 19, fontWeight: 700, letterSpacing: '-0.02em' }}>Choose a new password</h2>
+              <p className="muted tiny" style={{ marginTop: 4 }}>Enter the 6-digit code we sent to {email}, then set a new password (at least {MIN_PW} characters).</p>
+              <form onSubmit={doReset} style={{ marginTop: 22, display: 'flex', flexDirection: 'column', gap: 14 }}>
                 <div className="field">
-                  <label htmlFor="code">Enter 6-digit code</label>
+                  <label htmlFor="code">6-digit code</label>
                   <input id="code" className="input mono" inputMode="numeric" maxLength={6}
                     value={code} onChange={e => { setCode(e.target.value.replace(/\D/g, '').slice(0, 6)); setErr(''); }}
                     placeholder="••••••" style={{ letterSpacing: '4px', fontSize: 16 }} />
                 </div>
-                {err && <div className="tiny" style={{ color: 'var(--red)' }}>{err}</div>}
-                <Btn variant="primary" type="submit" disabled={busy || code.length !== 6}>{busy ? 'Verifying…' : 'Verify code'}</Btn>
-                <button type="button" className="muted tiny" onClick={() => goView('recover-identify')}>Use a different email</button>
-              </form>
-            </>
-          )}
-
-          {view === 'recover-setpw' && (
-            <>
-              <h2 style={{ fontSize: 19, fontWeight: 700, letterSpacing: '-0.02em' }}>Create a password</h2>
-              <p className="muted tiny" style={{ marginTop: 4 }}>At least {MIN_PW} characters.</p>
-              <form onSubmit={doSetPw} style={{ marginTop: 22, display: 'flex', flexDirection: 'column', gap: 14 }}>
                 <div className="field">
                   <label htmlFor="newpw">New password</label>
                   <div className="input-group" style={{ height: 38 }}>
@@ -189,7 +182,8 @@ export function AuthScreen(): React.ReactElement {
                 </div>
                 {confirmPw.length > 0 && newPw !== confirmPw && <div className="tiny muted">Passwords don't match yet.</div>}
                 {err && <div className="tiny" style={{ color: 'var(--red)' }}>{err}</div>}
-                <Btn variant="primary" type="submit" disabled={busy || !pwValid}>{busy ? 'Saving…' : pwSaved ? 'Finish sign-in' : 'Set password & sign in'}</Btn>
+                <Btn variant="primary" type="submit" disabled={busy || !resetValid}>{busy ? 'Saving…' : 'Set password'}</Btn>
+                <button type="button" className="muted tiny" onClick={() => goView('recover-identify')}>Use a different email</button>
               </form>
             </>
           )}
