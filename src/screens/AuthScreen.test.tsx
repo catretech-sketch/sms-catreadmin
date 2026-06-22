@@ -118,4 +118,14 @@ describe('AuthScreen', () => {
     await userEvent.type(screen.getByLabelText(/confirm password/i), 'shortenough');
     expect(btn).toBeEnabled();
   });
+
+  it('shows the 8-character password requirement on the reset screen', async () => {
+    vi.spyOn(authApi, 'passwordForgot').mockResolvedValue({ sent: true });
+    wrap();
+    await userEvent.click(screen.getByRole('button', { name: /forgot password/i }));
+    await userEvent.type(screen.getByLabelText(/^email$/i), 'rohan@catre.io');
+    await userEvent.click(screen.getByRole('button', { name: /send code/i }));
+    await screen.findByLabelText(/new password/i);
+    expect(screen.getByText(/must be at least 8 characters/i)).toBeInTheDocument();
+  });
 });

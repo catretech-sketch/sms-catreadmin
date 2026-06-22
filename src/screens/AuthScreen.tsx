@@ -174,6 +174,9 @@ export function AuthScreen(): React.ReactElement {
                       value={newPw} onChange={e => { setNewPw(e.target.value); setErr(''); }} />
                     {PwToggle}
                   </div>
+                  <div className="tiny" style={{ marginTop: 6, color: newPw.length > 0 && newPw.length < MIN_PW ? 'var(--red)' : 'var(--text-3)' }}>
+                    Must be at least {MIN_PW} characters.
+                  </div>
                 </div>
                 <div className="field">
                   <label htmlFor="confirmpw">Confirm password</label>
