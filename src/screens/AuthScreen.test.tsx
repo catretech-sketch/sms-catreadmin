@@ -53,7 +53,7 @@ describe('AuthScreen', () => {
     vi.spyOn(authApi, 'otpRequest').mockResolvedValue({ sent: true });
     vi.spyOn(authApi, 'otpVerify').mockResolvedValue({ access_token: 'a', refresh_token: 'r' });
     const setPwSpy = vi.spyOn(authApi, 'setPassword').mockResolvedValue();
-    vi.spyOn(authApi, 'me').mockResolvedValue({ id: 'u1', tenant_id: null, roles: ['owner'] });
+    const meSpy = vi.spyOn(authApi, 'me').mockResolvedValue({ id: 'u1', tenant_id: null, roles: ['owner'] });
     wrap();
     await userEvent.click(screen.getByRole('button', { name: /forgot password/i }));
     await userEvent.type(screen.getByLabelText(/^email$/i), 'rohan@catre.io');
@@ -64,6 +64,7 @@ describe('AuthScreen', () => {
     await userEvent.type(screen.getByLabelText(/confirm password/i), 'supersecret');
     await userEvent.click(screen.getByRole('button', { name: /set password/i }));
     await waitFor(() => expect(setPwSpy).toHaveBeenCalledWith('supersecret'));
+    await waitFor(() => expect(meSpy).toHaveBeenCalled());
   });
 
   it('keeps "Set password" disabled until ≥8 chars and confirm matches', async () => {

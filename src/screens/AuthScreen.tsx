@@ -20,8 +20,12 @@ export function AuthScreen(): React.ReactElement {
   const [confirmPw, setConfirmPw] = useState('');
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState('');
+  const [pwSaved, setPwSaved] = useState(false);
 
-  const goView = (v: View) => { setView(v); setErr(''); };
+  const goView = (v: View) => {
+    setView(v); setErr('');
+    setCode(''); setNewPw(''); setConfirmPw(''); setShowPw(false); setPwSaved(false);
+  };
 
   const doLogin = async (e: React.FormEvent) => {
     e.preventDefault(); setBusy(true); setErr('');
@@ -52,9 +56,14 @@ export function AuthScreen(): React.ReactElement {
   const pwValid = newPw.length >= MIN_PW && newPw === confirmPw;
   const doSetPw = async (e: React.FormEvent) => {
     e.preventDefault(); if (!pwValid) return; setBusy(true); setErr('');
-    try { await apiSetPassword(newPw); await finalizeSession(); }
-    catch (x) { setErr(x instanceof ApiError ? x.message : 'Could not set the password. Try again.'); }
-    finally { setBusy(false); }
+    let saved = pwSaved;
+    try {
+      if (!saved) { await apiSetPassword(newPw); saved = true; setPwSaved(true); }
+      await finalizeSession();
+    } catch (x) {
+      if (saved) setErr('Your password was saved, but sign-in didn\'t finish. Try again.');
+      else setErr(x instanceof ApiError ? x.message : 'Could not set the password. Try again.');
+    } finally { setBusy(false); }
   };
 
   const PwToggle = (
@@ -176,7 +185,7 @@ export function AuthScreen(): React.ReactElement {
                 </div>
                 {confirmPw.length > 0 && newPw !== confirmPw && <div className="tiny muted">Passwords don't match yet.</div>}
                 {err && <div className="tiny" style={{ color: 'var(--red)' }}>{err}</div>}
-                <Btn variant="primary" type="submit" disabled={busy || !pwValid}>{busy ? 'Saving…' : 'Set password & sign in'}</Btn>
+                <Btn variant="primary" type="submit" disabled={busy || !pwValid}>{busy ? 'Saving…' : pwSaved ? 'Finish sign-in' : 'Set password & sign in'}</Btn>
               </form>
             </>
           )}
