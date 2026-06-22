@@ -48,11 +48,15 @@ export function AuthScreen(): React.ReactElement {
   };
 
   // Step 2 — verify the code and set the new password in one call. No auto-login:
-  // on success we return to the sign-in screen for the user to log in.
-  const pwValid = newPw.length >= MIN_PW && newPw === confirmPw;
-  const resetValid = code.length === 6 && pwValid;
+  // on success we return to the sign-in screen for the user to log in. The button
+  // stays clickable; we validate on submit and surface a specific reason rather than
+  // leaving a silently-disabled button the user can't explain.
   const doReset = async (e: React.FormEvent) => {
-    e.preventDefault(); if (!resetValid) return; setBusy(true); setErr('');
+    e.preventDefault();
+    if (code.length !== 6) { setErr('Enter the full 6-digit code to continue.'); return; }
+    if (newPw.length < MIN_PW) { setErr(`Your new password must be at least ${MIN_PW} characters.`); return; }
+    if (newPw !== confirmPw) { setErr("The passwords don't match. Re-enter them."); return; }
+    setBusy(true); setErr('');
     try {
       await passwordReset(email.trim(), code.trim(), newPw);
       goView('login');
@@ -165,6 +169,9 @@ export function AuthScreen(): React.ReactElement {
                   <input id="code" className="input mono" inputMode="numeric" maxLength={6}
                     value={code} onChange={e => { setCode(e.target.value.replace(/\D/g, '').slice(0, 6)); setErr(''); }}
                     placeholder="••••••" style={{ letterSpacing: '4px', fontSize: 16 }} />
+                  <div className="tiny" style={{ marginTop: 6, color: code.length > 0 && code.length < 6 ? 'var(--red)' : 'var(--text-3)' }}>
+                    Enter all 6 digits of the code.
+                  </div>
                 </div>
                 <div className="field">
                   <label htmlFor="newpw">New password</label>
@@ -185,7 +192,7 @@ export function AuthScreen(): React.ReactElement {
                 </div>
                 {confirmPw.length > 0 && newPw !== confirmPw && <div className="tiny muted">Passwords don't match yet.</div>}
                 {err && <div className="tiny" style={{ color: 'var(--red)' }}>{err}</div>}
-                <Btn variant="primary" type="submit" disabled={busy || !resetValid}>{busy ? 'Saving…' : 'Set password'}</Btn>
+                <Btn variant="primary" type="submit" disabled={busy}>{busy ? 'Saving…' : 'Set password'}</Btn>
                 <button type="button" className="muted tiny" onClick={() => goView('recover-identify')}>Use a different email</button>
               </form>
             </>
