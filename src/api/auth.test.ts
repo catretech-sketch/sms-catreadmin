@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import * as client from './client';
-import { otpRequest, otpVerify, me } from './auth';
+import { otpRequest, otpVerify, login, me } from './auth';
 import { tokenStore } from '../auth/tokenStore';
 
 beforeEach(() => { localStorage.clear(); tokenStore.clear(); vi.restoreAllMocks(); });
@@ -17,6 +17,14 @@ describe('auth api', () => {
     await otpVerify('catre.tech@gmail.com', '123456');
     expect(tokenStore.getAccess()).toBe('a1');
     expect(tokenStore.getRefresh()).toBe('r1');
+  });
+
+  it('login posts credentials and stores the returned tokens', async () => {
+    const spy = vi.spyOn(client, 'request').mockResolvedValue({ access_token: 'a2', refresh_token: 'r2' });
+    await login('rohan@catre.io', 's3cret-pass');
+    expect(spy).toHaveBeenCalledWith('/auth/login', { method: 'POST', body: { email: 'rohan@catre.io', password: 's3cret-pass' } });
+    expect(tokenStore.getAccess()).toBe('a2');
+    expect(tokenStore.getRefresh()).toBe('r2');
   });
 
   it('me fetches the current user', async () => {

@@ -12,6 +12,12 @@ export async function otpVerify(identifier: string, code: string): Promise<AuthT
   return tokens;
 }
 
+export async function login(email: string, password: string): Promise<AuthTokens> {
+  const tokens = await request<AuthTokens>('/auth/login', { method: 'POST', body: { email, password } });
+  tokenStore.set(tokens);
+  return tokens;
+}
+
 export async function refresh(): Promise<AuthTokens> {
   const refresh_token = tokenStore.getRefresh();
   const tokens = await request<AuthTokens>('/auth/refresh', { method: 'POST', body: { refresh_token } });
