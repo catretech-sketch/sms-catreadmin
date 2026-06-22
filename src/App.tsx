@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from './auth/AuthContext';
-import { LoginScreen } from './screens/LoginScreen';
+import { AuthScreen } from './screens/AuthScreen';
 import { DashboardScreen } from './screens/DashboardScreen';
 import { HealthScreen } from './screens/HealthScreen';
 import { ClientsScreen } from './screens/ClientsScreen';
@@ -80,7 +80,7 @@ export function App() {
   if (status === 'loading') {
     return <div className="muted" style={{ display: 'grid', placeItems: 'center', minHeight: '100vh' }}>Loading…</div>;
   }
-  if (status === 'anon' || !role) return <LoginScreen />;
+  if (status === 'anon' || !role) return <AuthScreen />;
 
   const go = (name: string, params: Record<string, unknown> = {}) => {
     setRoute({ name, params });
