@@ -20,6 +20,23 @@ describe('AuthScreen', () => {
     expect(screen.queryByText(/demo logins/i)).not.toBeInTheDocument();
   });
 
+  it('offers a "Create a password" link on login that opens the email step', async () => {
+    wrap();
+    await userEvent.click(screen.getByRole('button', { name: /create a password/i }));
+    expect(await screen.findByRole('button', { name: /send code/i })).toBeInTheDocument();
+    expect(screen.getByLabelText(/^email$/i)).toBeInTheDocument();
+  });
+
+  it('tells an unregistered email to contact admin from the create-password entry', async () => {
+    vi.spyOn(authApi, 'otpRequest').mockRejectedValue(new ApiError(404, 'not_registered', 'Email is not registered.', null));
+    wrap();
+    await userEvent.click(screen.getByRole('button', { name: /create a password/i }));
+    await userEvent.type(screen.getByLabelText(/^email$/i), 'nobody@x.com');
+    await userEvent.click(screen.getByRole('button', { name: /send code/i }));
+    await waitFor(() => expect(screen.getByText("That email isn't registered. Contact your administrator.")).toBeInTheDocument());
+    expect(screen.queryByLabelText(/code/i)).not.toBeInTheDocument();
+  });
+
   it('signs in with email + password', async () => {
     const loginSpy = vi.spyOn(authApi, 'login').mockResolvedValue({ access_token: 'a', refresh_token: 'r' });
     vi.spyOn(authApi, 'me').mockResolvedValue({ id: 'u1', tenant_id: null, roles: ['owner'] });

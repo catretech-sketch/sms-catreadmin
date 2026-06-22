@@ -126,13 +126,17 @@ export function AuthScreen(): React.ReactElement {
                   {busy ? 'Signing in…' : 'Sign in'}{!busy && <Icon.arrowRight size={16} />}
                 </Btn>
               </form>
+              <div className="row gap6" style={{ marginTop: 16, justifyContent: 'center' }}>
+                <span className="tiny muted">First time here?</span>
+                <button type="button" className="tiny" style={{ color: 'var(--accent-text)' }} onClick={() => goView('recover-identify')}>Create a password</button>
+              </div>
             </>
           )}
 
           {view === 'recover-identify' && (
             <>
-              <h2 style={{ fontSize: 19, fontWeight: 700, letterSpacing: '-0.02em' }}>Reset your password</h2>
-              <p className="muted tiny" style={{ marginTop: 4 }}>First time signing in? Use this too — we'll email you a code.</p>
+              <h2 style={{ fontSize: 19, fontWeight: 700, letterSpacing: '-0.02em' }}>Set your password</h2>
+              <p className="muted tiny" style={{ marginTop: 4 }}>First time here or forgot your password? Enter your email — if it's registered, we'll send a 6-digit code to verify it's you.</p>
               <form onSubmit={doRequest} style={{ marginTop: 22, display: 'flex', flexDirection: 'column', gap: 14 }}>
                 <div className="field">
                   <label htmlFor="email">Email</label>
