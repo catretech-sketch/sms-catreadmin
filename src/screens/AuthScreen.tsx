@@ -73,8 +73,8 @@ export function AuthScreen(): React.ReactElement {
   );
 
   return (
-    <div style={{ minHeight: '100%', display: 'grid', placeItems: 'center', padding: 24, background: 'var(--bg-grad)' }}>
-      <div className="login-card">
+    <div style={{ minHeight: '100%', display: 'flex', overflowY: 'auto', padding: 24, background: 'var(--bg-grad)' }}>
+      <div className="login-card" style={{ margin: 'auto' }}>
         {/* left: brand panel */}
         <div className="login-brand">
           <div className="row gap10" style={{ marginBottom: 'auto' }}>
