@@ -18,7 +18,8 @@ export interface Me { id: string; tenant_id: string | null; roles: Role[]; }
 export const CONTRACT_KEYS: Record<string, string[]> = {
   TENANT_KEYS: ['id','name','slug','country','status','plan_id','plan_name','tier','mrr',
     'students_count','staff_count','storage_gb','limits','created','last_active_days',
-    'trial_ends_days','contact','csm','health_score','gateway','usage_series'],
+    'trial_ends_days','contact','csm','health_score','gateway','usage_series',
+    'contact_name','contact_email','contact_phone','address'],
   PLAN_KEYS: ['id','name','tier','pricing','price','per_student','min_students','period',
     'features','limits','visibility','audience','band','offer','color','description'],
   TEAM_MEMBER_KEYS: ['id','name','email','phone','role','status','last_login','joined'],
@@ -35,7 +36,8 @@ export const CONTRACT_KEYS: Record<string, string[]> = {
     'revenue_by_plan','plan_performance'],
   AUDIT_LOG_KEYS: ['id','actor_id','actor_name','role','action','target','kind','time'],
   CLIENT_USAGE_KEYS: ['students_count','staff_count','storage_gb','limits','usage_series','usage_pct'],
-  ONBOARDING_KEYS: ['id','name','value','owner','age','stage','checklist'],
+  ONBOARDING_KEYS: ['id','name','value','owner','age','stage','checklist',
+    'contact_name','contact_email','contact_phone','address'],
 };
 
 export type AuditKind = 'suspend' | 'refund' | 'trial' | 'impersonate' | 'plan' | 'team' | 'invoice' | 'activate';
@@ -83,6 +85,8 @@ export interface Client {
   limits: Record<string, number>; created: string; last_active_days: number;
   trial_ends_days: number | null; contact: string; csm: string;
   health_score: number; gateway: string; usage_series: number[];
+  contact_name: string | null; contact_email: string | null;
+  contact_phone: string | null; address: string | null;
 }
 
 export type ClientStatusAction = 'start_trial' | 'activate' | 'suspend' | 'reinstate' | 'cancel';
@@ -130,6 +134,8 @@ export interface ChecklistItem { label: string; done: boolean; }
 export interface OnboardingCard {
   id: string; name: string; value: number; owner: string; age: number;
   stage: OnboardingStage; checklist: ChecklistItem[];
+  contact_name: string | null; contact_email: string | null;
+  contact_phone: string | null; address: string | null;
 }
 
 export type TicketStatus = 'open' | 'pending' | 'resolved' | 'closed';

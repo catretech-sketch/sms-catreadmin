@@ -6,7 +6,8 @@ import { CONTRACT_KEYS, type Plan, type Invoice, type Subscription, type Onboard
 const EXPECTED: Record<string, string[]> = {
   TENANT_KEYS: ['id','name','slug','country','status','plan_id','plan_name','tier','mrr',
     'students_count','staff_count','storage_gb','limits','created','last_active_days',
-    'trial_ends_days','contact','csm','health_score','gateway','usage_series'],
+    'trial_ends_days','contact','csm','health_score','gateway','usage_series',
+    'contact_name','contact_email','contact_phone','address'],
   PLAN_KEYS: ['id','name','tier','pricing','price','per_student','min_students','period',
     'features','limits','visibility','audience','band','offer','color','description'],
   TEAM_MEMBER_KEYS: ['id','name','email','phone','role','status','last_login','joined'],
@@ -23,7 +24,8 @@ const EXPECTED: Record<string, string[]> = {
     'revenue_by_plan','plan_performance'],
   AUDIT_LOG_KEYS: ['id','actor_id','actor_name','role','action','target','kind','time'],
   CLIENT_USAGE_KEYS: ['students_count','staff_count','storage_gb','limits','usage_series','usage_pct'],
-  ONBOARDING_KEYS: ['id','name','value','owner','age','stage','checklist'],
+  ONBOARDING_KEYS: ['id','name','value','owner','age','stage','checklist',
+    'contact_name','contact_email','contact_phone','address'],
 };
 
 describe('contract keys', () => {
@@ -61,7 +63,8 @@ describe('billing DTOs', () => {
 
 describe('OnboardingCard', () => {
   it('covers ONBOARDING_KEYS', () => {
-    const k: Record<keyof OnboardingCard, true> = { id:true, name:true, value:true, owner:true, age:true, stage:true, checklist:true };
+    const k: Record<keyof OnboardingCard, true> = { id:true, name:true, value:true, owner:true, age:true, stage:true, checklist:true,
+      contact_name:true, contact_email:true, contact_phone:true, address:true };
     expect(Object.keys(k).sort()).toEqual([...CONTRACT_KEYS.ONBOARDING_KEYS].sort());
   });
 });
