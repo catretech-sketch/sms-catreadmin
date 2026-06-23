@@ -7,8 +7,8 @@
 ## Goal
 
 Surface per-entry contact information — **contact name, phone number, email,
-and postal address** — on both the **Clients list** and the **Onboarding
-pipeline**, backed by real data end-to-end.
+and postal address** — on the **Clients list**, the **Client detail screen**, and
+the **Onboarding pipeline**, backed by real data end-to-end.
 
 ## Current state (why this is full-stack)
 
@@ -110,6 +110,14 @@ JSON serialization is snake_case (`SnakeCaseNamingPolicy`), so the wire fields a
   contact panel: **name · phone · email · address**, each with its icon, and a
   graceful "—" when null.
 
+### ClientDetailScreen (`screens/ClientDetailScreen.tsx`)
+
+- Add a **Contact** card (same `card` styling as Usage/Activity), placed after the
+  KPI grid / before Usage. Always-visible (not an expander) since the detail page
+  has room. Shows name · phone · email · address, each with its icon and a "—"
+  fallback when null. Email/phone rendered as `mailto:` / `tel:` links. Data comes
+  from the existing `detail.data` (`Client`) — no extra fetch.
+
 ### OnboardingScreen (`screens/OnboardingScreen.tsx`)
 
 - In `Card`, add a second expander button ("Contact") beside the existing
@@ -129,8 +137,9 @@ JSON serialization is snake_case (`SnakeCaseNamingPolicy`), so the wire fields a
   client-create carries the contact fields. Migration applies cleanly.
 - **Frontend:** `types.test.ts` contract-key check; `ClientsScreen.test.tsx`
   asserts chevron toggles the contact panel and row click still navigates;
-  `OnboardingScreen.test.tsx` asserts the contact expander renders the fields and
-  "—" fallbacks.
+  `ClientDetailScreen.test.tsx` asserts the Contact card renders the fields (and
+  "—" fallbacks); `OnboardingScreen.test.tsx` asserts the contact expander renders
+  the fields and "—" fallbacks.
 
 ## Out of scope
 
