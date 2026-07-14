@@ -3,11 +3,16 @@
    Ported from ui.jsx — bodies verbatim, module plumbing + types added.
    ============================================================ */
 import React, { useState, useEffect, useRef, useCallback, createContext, useContext } from 'react';
+import { createPortal } from 'react-dom';
 import { Icon, IconComponent } from '../lib/icons';
 
 /* ---- formatters ---- */
 export const fmt = {
-  money: (n: number, dp = 0) => '₹' + Number(n).toLocaleString('en-IN', { minimumFractionDigits: dp, maximumFractionDigits: dp }),
+  money: (n: number | null | undefined, dp = 0) => {
+    const v = Number(n);
+    if (!Number.isFinite(v)) return '—';
+    return '₹' + v.toLocaleString('en-IN', { minimumFractionDigits: dp, maximumFractionDigits: dp });
+  },
   num: (n: number) => Number(n).toLocaleString('en-IN'),
   pct: (n: number) => n + '%',
   k: (n: number) => n >= 1000 ? '₹' + (n / 1000).toFixed(1) + 'k' : '₹' + n,
@@ -20,8 +25,16 @@ const AV_COLORS = ['#7c74ff', '#3ecf8e', '#f0b429', '#4ca6ff', '#b07cff', '#f768
 export const avColor = (str: string) => AV_COLORS[[...str].reduce((a, c) => a + c.charCodeAt(0), 0) % AV_COLORS.length];
 
 /* ---- Avatar ---- */
-type AvatarProps = { name: string; size?: number; square?: boolean };
-export function Avatar({ name, size = 28, square = false }: AvatarProps) {
+type AvatarProps = { name: string; size?: number; square?: boolean; src?: string | null };
+export function Avatar({ name, size = 28, square = false, src }: AvatarProps) {
+  if (src) {
+    return React.createElement('img', {
+      className: 'avatar' + (square ? ' avatar-sq' : ''),
+      src,
+      alt: name,
+      style: { width: size, height: size, objectFit: 'cover', display: 'block' },
+    });
+  }
   return React.createElement('div', {
     className: 'avatar' + (square ? ' avatar-sq' : ''),
     style: { width: size, height: size, fontSize: size * 0.4, background: `linear-gradient(140deg, ${avColor(name)}, ${avColor(name + 'x')})` }
@@ -168,17 +181,53 @@ export function ConfirmDialog({ open, onClose, onConfirm, title, message, confir
 type MenuProps = { trigger: React.ReactNode; children?: React.ReactNode; align?: 'left' | 'right'; width?: number };
 export function Menu({ trigger, children, align = 'right', width }: MenuProps) {
   const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
+  const [pos, setPos] = useState<{ top: number; left: number } | null>(null);
+  const wrapRef = useRef<HTMLDivElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  const place = useCallback(() => {
+    const el = wrapRef.current;
+    if (!el) return;
+    const r = el.getBoundingClientRect();
+    const w = width || 200;
+    const left = align === 'right' ? Math.max(8, r.right - w) : r.left;
+    setPos({ top: r.bottom + 6, left });
+  }, [align, width]);
+
   useEffect(() => {
     if (!open) return;
-    const h = (e: MouseEvent) => { if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false); };
-    document.addEventListener('mousedown', h);
-    return () => document.removeEventListener('mousedown', h);
-  }, [open]);
-  return React.createElement('div', { ref, style: { position: 'relative' } },
-    React.createElement('div', { onClick: () => setOpen(o => !o) }, trigger),
-    open && React.createElement('div', { className: 'menu', style: { position: 'absolute', top: 'calc(100% + 6px)', [align]: 0, zIndex: 50, minWidth: width || 200 },
-      onClick: () => setOpen(false) }, children));
+    place();
+    const onDoc = (e: MouseEvent) => {
+      const t = e.target as Node;
+      if (wrapRef.current?.contains(t) || menuRef.current?.contains(t)) return;
+      setOpen(false);
+    };
+    const onScroll = () => place();
+    document.addEventListener('mousedown', onDoc);
+    window.addEventListener('resize', onScroll);
+    window.addEventListener('scroll', onScroll, true);
+    return () => {
+      document.removeEventListener('mousedown', onDoc);
+      window.removeEventListener('resize', onScroll);
+      window.removeEventListener('scroll', onScroll, true);
+    };
+  }, [open, place]);
+
+  const menu = open && pos && createPortal(
+    React.createElement('div', {
+      ref: menuRef,
+      className: 'menu',
+      style: { position: 'fixed', top: pos.top, left: pos.left, zIndex: 4000, minWidth: width || 200 },
+      onClick: () => setOpen(false),
+    }, children),
+    document.body,
+  );
+
+  return React.createElement('div', { ref: wrapRef, style: { position: 'relative', display: 'inline-flex' } },
+    React.createElement('div', {
+      onClick: (e: React.MouseEvent) => { e.stopPropagation(); setOpen(o => !o); },
+    }, trigger),
+    menu);
 }
 
 type MenuItemProps = {

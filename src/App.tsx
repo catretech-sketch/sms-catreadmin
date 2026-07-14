@@ -9,6 +9,9 @@ import { ReportsScreen } from './screens/ReportsScreen';
 import { OnboardingScreen } from './screens/OnboardingScreen';
 import { OnboardWizard } from './screens/OnboardWizard';
 import { BillingScreen } from './screens/BillingScreen';
+import { TeamScreen } from './screens/TeamScreen';
+import { IdentityScreen } from './screens/IdentityScreen';
+import { SupportScreen } from './screens/SupportScreen';
 import { Icon, IconComponent } from './lib/icons';
 import { Menu, MenuItem, Avatar, NavCtx, Forbidden } from './components';
 import { ErrorBoundary } from './components/ErrorBoundary';
@@ -105,6 +108,9 @@ export function App() {
       case 'onboard':   return <OnboardWizard />;
       case 'plans':     return <BillingScreen plansOnly />;
       case 'billing':   return <BillingScreen />;
+      case 'team':      return <TeamScreen />;
+      case 'identity':  return <IdentityScreen />;
+      case 'support':   return <SupportScreen />;
       default: {
         const title = (CRUMB[route.name] || [route.name]).join(' / ');
         return (

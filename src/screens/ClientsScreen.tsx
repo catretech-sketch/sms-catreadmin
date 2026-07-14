@@ -151,7 +151,7 @@ export function ClientsScreen(): React.ReactElement {
                           <div className="row gap10" style={{ minWidth: 180 }}>
                             <Avatar name={c.name} size={30} square />
                             <div style={{ minWidth: 0 }}>
-                              <div className="truncate" style={{ fontWeight: 600 }}>{c.name}</div>
+                              <div className="truncate cell-name">{c.name}</div>
                               {c.slug && <div className="tiny muted mono truncate">{c.slug}</div>}
                             </div>
                           </div>

@@ -16,9 +16,9 @@ describe('tickets api', () => {
     await patchTicket('t1', { status: 'resolved' }); const [u, i] = f.mock.calls[0];
     expect(String(u)).toContain('/tickets/t1'); expect(i.method).toBe('PATCH'); expect(JSON.parse(i.body)).toEqual({ status: 'resolved' });
   });
-  it('postMessage POSTs /tickets/{id}/messages with { body }', async () => {
-    const f = vi.fn().mockResolvedValue(jr({ data: { id: 'm1' } })); vi.stubGlobal('fetch', f);
+  it('postMessage POSTs /tickets/{id}/messages with { text }', async () => {
+    const f = vi.fn().mockResolvedValue(jr({ data: { id: 't1', messages: [] } }, 201)); vi.stubGlobal('fetch', f);
     await postMessage('t1', 'hello'); const [u, i] = f.mock.calls[0];
-    expect(String(u)).toContain('/tickets/t1/messages'); expect(i.method).toBe('POST'); expect(JSON.parse(i.body)).toEqual({ body: 'hello' });
+    expect(String(u)).toContain('/tickets/t1/messages'); expect(i.method).toBe('POST'); expect(JSON.parse(i.body)).toEqual({ text: 'hello' });
   });
 });

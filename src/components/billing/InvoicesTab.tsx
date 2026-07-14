@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useInvoices } from '../../api/hooks/useInvoices';
 import { useMarkInvoicePaid, useRefundInvoice } from '../../api/hooks/useInvoiceMutations';
+import { downloadInvoicePdf, sendInvoiceEmail } from '../../api/invoices';
 import { useAuth } from '../../auth/AuthContext';
 import { useToast, Menu, MenuItem, Btn, ConfirmDialog, StatusBadge, fmt } from '../index';
 import { Icon } from '../../lib/icons';
@@ -76,7 +77,7 @@ export function InvoicesTab(): React.ReactElement {
                     </td>
                     <td>{inv.tenant_name}</td>
                     <td className="muted">{inv.plan_name}</td>
-                    <td className="num" style={{ fontWeight: 600 }}>{fmt.money(inv.amount)}</td>
+                    <td className="num" style={{ fontWeight: 600 }}>{fmt.money(inv.amount, 2)}</td>
                     <td>
                       <StatusBadge status={inv.status} />
                     </td>
@@ -88,29 +89,59 @@ export function InvoicesTab(): React.ReactElement {
                       {inv.due}
                     </td>
                     <td onClick={e => e.stopPropagation()}>
-                      <Menu trigger={<Btn variant="ghost" size="sm" icon={Icon.moreH} />}>
-                        <MenuItem icon={Icon.eye}>View invoice</MenuItem>
-                        {can('billing.manage_invoice') && inv.status !== 'paid' && (
+                      <div className="row gap6" style={{ justifyContent: 'flex-end' }}>
+                        <Btn
+                          variant="default"
+                          size="sm"
+                          icon={Icon.download}
+                          onClick={() => downloadInvoicePdf(inv.id).then(
+                            () => toast({ title: 'Invoice downloaded', msg: inv.tenant_name }),
+                            (e) => toast({ title: 'Download failed', msg: (e as ApiError).message, kind: 'error' }),
+                          )}
+                        >
+                          PDF
+                        </Btn>
+                        <Menu trigger={<Btn variant="ghost" size="sm" icon={Icon.moreH} />}>
                           <MenuItem
-                            icon={Icon.check}
-                            onClick={() => markPaid.mutate(inv.id, {
-                              onSuccess: () => toast({ title: 'Invoice marked paid', msg: inv.id }),
-                              onError: (e) => toast({ title: 'Error', msg: (e as ApiError).message, kind: 'error' }),
-                            })}
+                            icon={Icon.download}
+                            onClick={() => downloadInvoicePdf(inv.id).then(
+                              () => toast({ title: 'Invoice downloaded', msg: inv.tenant_name }),
+                              (e) => toast({ title: 'Download failed', msg: (e as ApiError).message, kind: 'error' }),
+                            )}
                           >
-                            Mark as paid
+                            Download PDF
                           </MenuItem>
-                        )}
-                        {can('billing.refund') && inv.status === 'paid' && (
                           <MenuItem
-                            icon={Icon.refund}
-                            danger={true}
-                            onClick={() => setRefundTarget(inv)}
+                            icon={Icon.mail}
+                            onClick={() => sendInvoiceEmail(inv.id).then(
+                              () => toast({ title: 'Invoice emailed', msg: 'Sent to school owner contact' }),
+                              (e) => toast({ title: 'Send failed', msg: (e as ApiError).message, kind: 'error' }),
+                            )}
                           >
-                            Refund
+                            Email to school
                           </MenuItem>
-                        )}
-                      </Menu>
+                          {can('billing.manage_invoice') && inv.status !== 'paid' && (
+                            <MenuItem
+                              icon={Icon.check}
+                              onClick={() => markPaid.mutate(inv.id, {
+                                onSuccess: () => toast({ title: 'Invoice marked paid', msg: inv.id }),
+                                onError: (e) => toast({ title: 'Error', msg: (e as ApiError).message, kind: 'error' }),
+                              })}
+                            >
+                              Mark as paid
+                            </MenuItem>
+                          )}
+                          {can('billing.refund') && inv.status === 'paid' && (
+                            <MenuItem
+                              icon={Icon.refund}
+                              danger={true}
+                              onClick={() => setRefundTarget(inv)}
+                            >
+                              Refund
+                            </MenuItem>
+                          )}
+                        </Menu>
+                      </div>
                     </td>
                   </tr>
                 ))}

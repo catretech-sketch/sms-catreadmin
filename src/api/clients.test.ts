@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { listClients, getClient, createClient, setClientStatus, changeClientPlan } from './clients';
+import { listClients, getClient, getClientUsage, getClientActivity, createClient, setClientStatus, changeClientPlan } from './clients';
 
 function jsonResponse(body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } });
@@ -29,6 +29,38 @@ describe('getClient', () => {
   });
 });
 
+describe('getClientUsage', () => {
+  it('derives usage from GET /clients/{id} (no /usage route on backend)', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(jsonResponse({
+      data: {
+        id: 'c1', students_count: 400, staff_count: 30, storage_gb: 12,
+        limits: { students: 1000, staff: 80, storage_gb: 50 }, usage_series: [1, 2],
+      },
+    }));
+    vi.stubGlobal('fetch', fetchMock);
+    const out = await getClientUsage('c1');
+    expect(String(fetchMock.mock.calls[0][0])).toContain('/clients/c1');
+    expect(String(fetchMock.mock.calls[0][0])).not.toContain('/usage');
+    expect(out).toEqual({
+      students_count: 400, staff_count: 30, storage_gb: 12,
+      limits: { students: 1000, staff: 80, storage_gb: 50 },
+      usage_series: [1, 2], usage_pct: 40,
+    });
+  });
+});
+
+describe('getClientActivity', () => {
+  it('GETs /audit?tenant_id={id}', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(jsonResponse({ data: [], next_cursor: null }));
+    vi.stubGlobal('fetch', fetchMock);
+    await getClientActivity('c1', 'cur1');
+    const url = String(fetchMock.mock.calls[0][0]);
+    expect(url).toContain('/audit');
+    expect(url).toContain('tenant_id=c1');
+    expect(url).toContain('cursor=cur1');
+  });
+});
+
 describe('createClient', () => {
   it('POSTs /clients with the body', async () => {
     const fetchMock = vi.fn().mockResolvedValue(jsonResponse({ data: { id: 'c9' } }));
@@ -45,14 +77,26 @@ describe('createClient', () => {
 });
 
 describe('setClientStatus', () => {
-  it('POSTs /clients/{id}/status with { action }', async () => {
+  it('POSTs /clients/{id}/status with { status } mapped from the UI action', async () => {
     const fetchMock = vi.fn().mockResolvedValue(jsonResponse({ data: { id: 'c1', status: 'suspended' } }));
     vi.stubGlobal('fetch', fetchMock);
     await setClientStatus('c1', 'suspend');
     const [url, init] = fetchMock.mock.calls[0];
     expect(String(url)).toContain('/clients/c1/status');
     expect(init.method).toBe('POST');
-    expect(JSON.parse(init.body)).toEqual({ action: 'suspend' });
+    expect(init.headers['Content-Type']).toBe('application/json');
+    expect(JSON.parse(init.body)).toEqual({ status: 'suspended' });
+  });
+
+  it('maps activate/reinstate → active and start_trial → trial', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(jsonResponse({ data: { id: 'c1' } }));
+    vi.stubGlobal('fetch', fetchMock);
+    await setClientStatus('c1', 'activate');
+    await setClientStatus('c1', 'reinstate');
+    await setClientStatus('c1', 'start_trial', 're-onboard');
+    expect(JSON.parse(fetchMock.mock.calls[0][1].body)).toEqual({ status: 'active' });
+    expect(JSON.parse(fetchMock.mock.calls[1][1].body)).toEqual({ status: 'active' });
+    expect(JSON.parse(fetchMock.mock.calls[2][1].body)).toEqual({ status: 'trial', reason: 're-onboard' });
   });
 });
 

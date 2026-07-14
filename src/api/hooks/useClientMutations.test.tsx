@@ -27,5 +27,9 @@ describe('useSetClientStatus', () => {
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(spy).toHaveBeenCalledWith({ queryKey: ['clients', 'detail', 'c1'] });
     expect(spy).toHaveBeenCalledWith({ queryKey: ['clients', 'list'] });
+    expect(spy).toHaveBeenCalledWith({ queryKey: ['subscriptions', 'list'] });
+    expect(spy).toHaveBeenCalledWith({ queryKey: ['invoices', 'list'] });
+    expect(spy).toHaveBeenCalledWith({ queryKey: ['dashboard', 'overview'] });
+    expect(spy).toHaveBeenCalledWith({ queryKey: ['onboarding', 'list'] });
   });
 });

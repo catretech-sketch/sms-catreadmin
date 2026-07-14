@@ -10,7 +10,7 @@ const EXPECTED: Record<string, string[]> = {
     'contact_name','contact_email','contact_phone','address'],
   PLAN_KEYS: ['id','name','tier','pricing','price','per_student','min_students','period',
     'features','limits','visibility','audience','band','offer','color','description'],
-  TEAM_MEMBER_KEYS: ['id','name','email','phone','role','status','last_login','joined'],
+  TEAM_MEMBER_KEYS: ['id','name','email','phone','role','status','last_login','joined','employee_id','photo_url','documents'],
   INVOICE_KEYS: ['id','tenant_id','tenant_name','plan_name','amount','status','issued','due','paid_on'],
   SUBSCRIPTION_KEYS: ['id','tenant_id','tenant_name','plan_id','plan_name','tier','status',
     'current_period_start','current_period_end','next_charge'],

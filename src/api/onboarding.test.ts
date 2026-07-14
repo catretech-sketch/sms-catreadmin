@@ -13,9 +13,9 @@ describe('onboarding api', () => {
     await advanceOnboarding('o1', 'trial'); const [u, i] = f.mock.calls[0];
     expect(String(u)).toContain('/onboarding/o1/advance'); expect(i.method).toBe('POST'); expect(JSON.parse(i.body)).toEqual({ stage: 'trial' });
   });
-  it('patchChecklist PATCHes /onboarding/{id}/checklist with { index, done }', async () => {
+  it('patchChecklist PATCHes /onboarding/{id}/checklist with { label, done }', async () => {
     const f = vi.fn().mockResolvedValue(jsonResponse({ data: { id: 'o1' } })); vi.stubGlobal('fetch', f);
-    await patchChecklist('o1', 2, true); const [u, i] = f.mock.calls[0];
-    expect(String(u)).toContain('/onboarding/o1/checklist'); expect(i.method).toBe('PATCH'); expect(JSON.parse(i.body)).toEqual({ index: 2, done: true });
+    await patchChecklist('o1', 'Kickoff', true); const [u, i] = f.mock.calls[0];
+    expect(String(u)).toContain('/onboarding/o1/checklist'); expect(i.method).toBe('PATCH'); expect(JSON.parse(i.body)).toEqual({ label: 'Kickoff', done: true });
   });
 });

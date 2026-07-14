@@ -37,17 +37,16 @@ describe('App shell', () => {
     expect(screen.queryByTitle(/switch role/i)).not.toBeInTheDocument();
   });
 
-  it('gives Admin the full operational nav except Team/Settings', async () => {
+  it('gives Admin operational nav including Team and Identity', async () => {
     tokenStore.set({ access_token: 'a1', refresh_token: 'r1' });
     vi.spyOn(authApi, 'me').mockResolvedValue({ id: 'u1', tenant_id: null, roles: ['admin'] });
     wrap();
     const nav = within(await screen.findByRole('navigation'));
     // present for admin
-    for (const label of ['Dashboard', 'Onboarding', 'Plans', 'Billing', 'Reports', 'Support', 'Identity & Access']) {
+    for (const label of ['Dashboard', 'Onboarding', 'Plans', 'Billing', 'Reports', 'Support', 'Identity & Access', 'Team']) {
       expect(nav.getByText(label)).toBeInTheDocument();
     }
     // owner-only — hidden from admin
-    expect(nav.queryByText('Team')).not.toBeInTheDocument();
     expect(nav.queryByText('Settings')).not.toBeInTheDocument();
   });
 

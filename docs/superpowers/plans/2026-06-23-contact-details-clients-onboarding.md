@@ -222,8 +222,7 @@ git -C D:/SMS/sms-project/sms-backend commit -m "feat(catre): persist + return c
 ### Task 2: Backend — onboarding contact columns end-to-end
 
 **Files:**
-- Create: `db/Sms.Migrations/M0046_Onboarding_Contact.cs`
-- Modify: `db/Sms.Migrations/procs/catreops/Onboarding_Create.sql`
+- Create: `db/Sms.Migrations/M0047_Onboarding_Contact.cs` (proc applied inline; do NOT edit `Onboarding_Create.sql`)
 - Modify: `src/Sms.Modules.Tenancy/Contracts/OpsContracts.cs`
 - Modify: `src/Sms.Modules.Tenancy/Data/OnboardingRepository.cs`
 - Modify: `src/Sms.Modules.Tenancy/ModuleEndpoints.cs:76-78`
@@ -267,52 +266,35 @@ public async Task Client_create_seeds_onboarding_card_with_contact()
 Run: `dotnet test tests/Sms.Tests.Integration --filter Client_create_seeds_onboarding_card_with_contact`
 Expected: FAIL — onboarding JSON has no `contact_name` property.
 
-- [ ] **Step 3: Add onboarding contact columns + backfill (migration)**
+> **IMPORTANT — learned during Task 1 (read before implementing):** The plan
+> originally said migration M0046 + re-apply `EmbeddedProcs("procs.catreops.")`
+> after updating `Onboarding_Create.sql`. Two corrections, both verified against
+> the live DB:
+> 1. **Renumber to M0047.** M0045 and M0046 are already taken (M0046 = Task 1's
+>    `M0046_Tenant_Address.cs`). Next free number is **47**.
+> 2. **Apply the proc INLINE; do NOT edit `Onboarding_Create.sql`.** SQL Server
+>    validates columns at `CREATE PROCEDURE` time (confirmed empirically — it is
+>    NOT deferred for columns of existing tables). The historical migration that
+>    first creates `Onboarding_Create` from the embedded `.sql` runs on a fresh
+>    install *before* this migration adds the contact columns; if the `.sql`
+>    referenced `ContactName` etc., that earlier migration would fail with
+>    "Invalid column name". So leave `procs/catreops/Onboarding_Create.sql` at
+>    its pre-contact baseline and put the new proc body inline in M0047 (same
+>    pattern Task 1 used for the client procs). `Down()` re-applies the baseline.
 
-Create `db/Sms.Migrations/M0046_Onboarding_Contact.cs`:
+- [ ] **Step 3: Add onboarding contact columns + inline proc + backfill (migration)**
+
+Create `db/Sms.Migrations/M0047_Onboarding_Contact.cs`:
 
 ```csharp
 using FluentMigrator;
 
 namespace Sms.Migrations;
 
-[Migration(46, "Catre: add contact columns to OnboardingItems; re-apply catreops procs; backfill from linked tenants")]
-public sealed class M0046_Onboarding_Contact : Migration
+[Migration(47, "Catre: add contact columns to OnboardingItems; apply Onboarding_Create inline (new cols); backfill from linked tenants")]
+public sealed class M0047_Onboarding_Contact : Migration
 {
-    public override void Up()
-    {
-        Alter.Table("OnboardingItems")
-            .AddColumn("ContactName").AsString(200).Nullable()
-            .AddColumn("ContactEmail").AsString(256).Nullable()
-            .AddColumn("ContactPhone").AsString(40).Nullable()
-            .AddColumn("Address").AsString(300).Nullable();
-
-        // Re-apply catreops procs so already-migrated DBs pick up the updated Onboarding_Create.
-        foreach (var sql in M0003_Procs_Auth.EmbeddedProcs("procs.catreops."))
-            Execute.Sql(sql);
-
-        // Backfill existing tenant-linked cards from their tenant's contact details.
-        Execute.Sql(@"
-UPDATE o SET o.ContactName = t.ContactName, o.ContactEmail = t.ContactEmail,
-             o.ContactPhone = t.ContactPhone, o.Address = t.Address
-FROM dbo.OnboardingItems o
-JOIN dbo.Tenants t ON t.Id = o.TenantId
-WHERE o.TenantId IS NOT NULL;");
-    }
-
-    public override void Down()
-    {
-        Delete.Column("ContactName").Column("ContactEmail").Column("ContactPhone").Column("Address")
-            .FromTable("OnboardingItems");
-    }
-}
-```
-
-- [ ] **Step 4: Update the Onboarding_Create proc**
-
-Replace `db/Sms.Migrations/procs/catreops/Onboarding_Create.sql` with:
-
-```sql
+    private const string OnboardingCreateInline = @"
 CREATE OR ALTER PROCEDURE dbo.Onboarding_Create
     @Name nvarchar(200), @Slug nvarchar(100), @Owner nvarchar(120),
     @Value decimal(18,2), @Stage nvarchar(20),
@@ -328,14 +310,51 @@ BEGIN
     VALUES (@Id, @TenantId, @Name, @Slug, @Owner, ISNULL(@Value, 0), ISNULL(@Stage, 'lead'),
         @ContactName, @ContactEmail, @ContactPhone, @Address);
 
-    -- The account exists by the time a card is created, so step 1 starts done.
     INSERT dbo.OnboardingChecklist (OnboardingId, Seq, Label, Done) VALUES
         (@Id, 1, 'Account created', 1), (@Id, 2, 'Admin invited', 0), (@Id, 3, 'Data imported', 0),
         (@Id, 4, 'First login', 0), (@Id, 5, 'Payment set up', 0);
 
     SELECT @Id AS Id;
-END
+END";
+
+    public override void Up()
+    {
+        Alter.Table("OnboardingItems")
+            .AddColumn("ContactName").AsString(200).Nullable()
+            .AddColumn("ContactEmail").AsString(256).Nullable()
+            .AddColumn("ContactPhone").AsString(40).Nullable()
+            .AddColumn("Address").AsString(300).Nullable();
+
+        // Apply the new Onboarding_Create INLINE (the embedded .sql stays at the pre-contact
+        // baseline so the historical proc-creation migration still succeeds on fresh installs).
+        Execute.Sql(OnboardingCreateInline);
+
+        // Backfill existing tenant-linked cards from their tenant's contact details.
+        Execute.Sql(@"
+UPDATE o SET o.ContactName = t.ContactName, o.ContactEmail = t.ContactEmail,
+             o.ContactPhone = t.ContactPhone, o.Address = t.Address
+FROM dbo.OnboardingItems o
+JOIN dbo.Tenants t ON t.Id = o.TenantId
+WHERE o.TenantId IS NOT NULL;");
+    }
+
+    public override void Down()
+    {
+        Delete.Column("ContactName").Column("ContactEmail").Column("ContactPhone").Column("Address")
+            .FromTable("OnboardingItems");
+        // Restore the pre-contact baseline Onboarding_Create (embedded .sql is still at baseline)
+        // so the proc no longer references the dropped columns.
+        foreach (var sql in M0003_Procs_Auth.EmbeddedProcs("procs.catreops."))
+            Execute.Sql(sql);
+    }
+}
 ```
+
+- [ ] **Step 4: Do NOT modify `Onboarding_Create.sql`**
+
+Leave `db/Sms.Migrations/procs/catreops/Onboarding_Create.sql` at its current pre-contact
+baseline (it is the fresh-install version the historical migration reads). The new proc body
+lives inline in M0047 (Step 3). Verify you have NOT staged any change to this `.sql` file.
 
 - [ ] **Step 5: Update onboarding DTOs**
 
@@ -435,7 +454,7 @@ Expected: PASS (all facts).
 - [ ] **Step 10: Commit (in sms-backend)**
 
 ```bash
-git -C D:/SMS/sms-project/sms-backend add db/Sms.Migrations/M0046_Onboarding_Contact.cs db/Sms.Migrations/procs/catreops/Onboarding_Create.sql src/Sms.Modules.Tenancy/Contracts/OpsContracts.cs src/Sms.Modules.Tenancy/Data/OnboardingRepository.cs src/Sms.Modules.Tenancy/ModuleEndpoints.cs tests/Sms.Tests.Integration/Catre/CatreClientsTests.cs
+git -C D:/SMS/sms-project/sms-backend add db/Sms.Migrations/M0047_Onboarding_Contact.cs src/Sms.Modules.Tenancy/Contracts/OpsContracts.cs src/Sms.Modules.Tenancy/Data/OnboardingRepository.cs src/Sms.Modules.Tenancy/ModuleEndpoints.cs tests/Sms.Tests.Integration/Catre/CatreClientsTests.cs
 git -C D:/SMS/sms-project/sms-backend commit -m "feat(catre): carry contact details onto onboarding cards"
 ```
 

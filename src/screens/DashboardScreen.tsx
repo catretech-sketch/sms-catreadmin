@@ -107,7 +107,7 @@ export function DashboardScreen(): React.ReactElement {
                           onClick={() => go('client', { id: a.tenant_id })}>
                           <Avatar name={a.name} size={30} square />
                           <div className="f1 row jb" style={{ minWidth: 0 }}>
-                            <span style={{ fontWeight: 600, fontSize: 13 }} className="truncate">{a.name}</span>
+                            <span className="truncate cell-name">{a.name}</span>
                             <span className="mono tiny" style={{ color: a.usage_pct >= 95 ? 'var(--red)' : 'var(--amber)' }}>{a.usage_pct}%</span>
                           </div>
                           <StatusBadge status={a.status} />

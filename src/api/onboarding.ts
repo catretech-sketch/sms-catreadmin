@@ -7,6 +7,7 @@ export function getOnboarding(): Promise<ListEnvelope<OnboardingCard>> {
 export function advanceOnboarding(id: string, stage: OnboardingStage): Promise<OnboardingCard> {
   return request<OnboardingCard>(`/onboarding/${id}/advance`, { method: 'POST', body: { stage } });
 }
-export function patchChecklist(id: string, index: number, done: boolean): Promise<OnboardingCard> {
-  return request<OnboardingCard>(`/onboarding/${id}/checklist`, { method: 'PATCH', body: { index, done } });
+/** Backend keys checklist items by label, not index. */
+export function patchChecklist(id: string, label: string, done: boolean): Promise<OnboardingCard> {
+  return request<OnboardingCard>(`/onboarding/${id}/checklist`, { method: 'PATCH', body: { label, done } });
 }

@@ -20,6 +20,10 @@ export function useSetClientStatus(id: string) {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: qk.clients.detail(id) });
       qc.invalidateQueries({ queryKey: LIST_KEY });
+      qc.invalidateQueries({ queryKey: qk.subscriptions.list() });
+      qc.invalidateQueries({ queryKey: ['invoices', 'list'] });
+      qc.invalidateQueries({ queryKey: qk.dashboard() });
+      qc.invalidateQueries({ queryKey: qk.onboarding.list() });
     },
   });
 }

@@ -43,6 +43,7 @@ async function rawFetch(path: string, opts: RequestOpts, accessToken: string | n
 }
 
 async function parse<T>(res: Response): Promise<T> {
+  if (res.status === 204) return undefined as T;
   let json: unknown = {};
   try {
     const text = await res.text();

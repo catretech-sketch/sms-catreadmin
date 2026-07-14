@@ -50,7 +50,7 @@ function Card({ card, colKey, manage, dragId, onDragStart, onDragEnd, onToggle }
         <div className="row gap8" style={{ minWidth: 0 }}>
           <Avatar name={card.name} size={26} square={true} />
           <div style={{ minWidth: 0 }}>
-            <div className="truncate" style={{ fontWeight: 600, fontSize: 13 }}>{card.name}</div>
+            <div className="truncate cell-name">{card.name}</div>
             <div className="tiny muted mono">{fmt.money(card.value)}/mo</div>
           </div>
         </div>
@@ -60,6 +60,23 @@ function Card({ card, colKey, manage, dragId, onDragStart, onDragEnd, onToggle }
           </span>
         )}
       </div>
+
+      {(card.contact_name || card.contact_email || card.contact_phone || card.address) && (
+        <div className="fc gap2" style={{ marginTop: 10, paddingTop: 8, borderTop: '1px solid var(--border-soft)' }}>
+          {card.contact_name && (
+            <div className="row gap6 tiny muted"><Icon.user size={12} /><span className="truncate">{card.contact_name}</span></div>
+          )}
+          {card.contact_email && (
+            <div className="row gap6 tiny muted"><Icon.mail size={12} /><span className="truncate">{card.contact_email}</span></div>
+          )}
+          {card.contact_phone && (
+            <div className="row gap6 tiny muted"><Icon.phone size={12} /><span className="truncate">{card.contact_phone}</span></div>
+          )}
+          {card.address && (
+            <div className="row gap6 tiny muted"><Icon.building size={12} /><span className="truncate">{card.address}</span></div>
+          )}
+        </div>
+      )}
 
       <div className="row gap8" style={{ marginTop: 10 }}>
         <div className="bar" style={{ flex: 1 }}>
@@ -148,8 +165,10 @@ export function OnboardingScreen() {
 
   const handleToggle = (card: OnboardingCard, i: number) => {
     if (!manage) return;
+    const item = card.checklist?.[i];
+    if (!item) return;
     patch.mutate(
-      { id: card.id, index: i, done: !card.checklist?.[i]?.done },
+      { id: card.id, label: item.label, done: !item.done },
       { onError: (e) => toast({ kind: 'error', title: 'Update failed', msg: (e as ApiError).message }) }
     );
   };
@@ -185,7 +204,7 @@ export function OnboardingScreen() {
               }}
             >
               <div className="row jb" style={{ padding: '4px 8px 12px' }}>
-                <span className="row gap8" style={{ fontWeight: 650, fontSize: 13 }}>
+                <span className="row gap8 col-title">
                   <span style={{ width: 8, height: 8, borderRadius: 3, background: col.color }} />
                   {col.title}
                 </span>

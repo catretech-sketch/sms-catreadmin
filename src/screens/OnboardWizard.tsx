@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNav, useToast, Btn, Avatar, fmt } from '../components';
 import { Icon } from '../lib/icons';
 import { usePlans } from '../api/hooks/usePlans';
+import { useTeam } from '../api/hooks/useTeam';
 import { useCreateClient } from '../api/hooks/useClientMutations';
 import type { ApiError } from '../api/ApiError';
 import type { Plan, CreateClientBody, ClientStatus } from '../api/types';
@@ -9,7 +10,7 @@ import type { Plan, CreateClientBody, ClientStatus } from '../api/types';
 type Form = {
   name: string; slug: string; city: string; address: string; size: string; status: ClientStatus;
   adminName: string; adminEmail: string; adminPhone: string;
-  plan_id: string; trial: number;
+  plan_id: string; trial: number; csm: string;
 };
 
 const CITIES = ['Mumbai, MH', 'New Delhi, DL', 'Bengaluru, KA', 'Hyderabad, TS', 'Chennai, TN', 'Pune, MH', 'Kolkata, WB', 'Ahmedabad, GJ'];
@@ -46,13 +47,17 @@ export function OnboardWizard(): React.ReactElement {
   const toast = useToast();
   const { data } = usePlans();
   const plans: Plan[] = data?.data ?? [];
+  const team = useTeam();
   const create = useCreateClient();
+
+  const salesPeople = (team.data?.data ?? []).filter(m =>
+    m.status === 'active' && (m.role === 'sales' || m.role === 'admin' || m.role === 'owner'));
 
   const [step, setStep] = useState(0);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [form, setForm] = useState<Form>({
     name: '', slug: '', city: 'Mumbai, MH', address: '', size: '', status: 'trial',
-    adminName: '', adminEmail: '', adminPhone: '', plan_id: plans[0]?.id ?? '', trial: 14,
+    adminName: '', adminEmail: '', adminPhone: '', plan_id: plans[0]?.id ?? '', trial: 14, csm: '',
   });
   const set = (k: keyof Form, v: string | number) =>
     setForm(d => ({ ...d, [k]: v, ...(k === 'name' ? { slug: String(v).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') } : {}) }));
@@ -83,6 +88,7 @@ export function OnboardWizard(): React.ReactElement {
       address: form.address, status: form.status,
       admin_name: form.adminName, admin_email: form.adminEmail, admin_phone: form.adminPhone,
       plan_id: form.plan_id || plans[0]?.id || '', trial_days: form.trial,
+      csm: form.csm || null,
     };
     create.mutate(body, {
       onSuccess: () => { toast({ kind: 'success', title: 'Client created', msg: `${form.name} is now ${form.status === 'active' ? 'active' : 'in trial'}.` }); nav.go('clients'); },
@@ -147,6 +153,16 @@ export function OnboardWizard(): React.ReactElement {
                 <Field label="Admin full name" k="adminName" form={form} set={set} errors={errors} placeholder="e.g. Priya Sharma" />
                 <Field label="Admin email" k="adminEmail" form={form} set={set} errors={errors} type="email" placeholder="admin@school.edu" hint="They'll receive an invite to set up the account." />
                 <Field label="Phone (optional)" k="adminPhone" form={form} set={set} errors={errors} placeholder="+91 90000 00000" />
+                <div className="field">
+                  <label>Sales / CSM</label>
+                  <select className="select" value={form.csm} onChange={e => set('csm', e.target.value)}>
+                    <option value="">Unassigned</option>
+                    {salesPeople.map(m => (
+                      <option key={m.id} value={m.name}>{m.name} ({m.role})</option>
+                    ))}
+                  </select>
+                  <span className="hint">Assign a sales or admin teammate as CSM for this school.</span>
+                </div>
               </div>
             )}
 
@@ -208,6 +224,7 @@ export function OnboardWizard(): React.ReactElement {
                   <dt>Address</dt><dd>{form.address || '—'}</dd>
                   <dt>Status</dt><dd>{STATUSES.find(s => s.value === form.status)?.label ?? form.status}</dd>
                   <dt>Admin</dt><dd>{form.adminName || '—'} · {form.adminEmail || '—'}</dd>
+                  <dt>CSM</dt><dd>{form.csm || 'Unassigned'}</dd>
                   <dt>Plan</dt><dd>{plan ? `${plan.name} · ${fmt.money(plan.price)}/mo` : '—'}</dd>
                   <dt>Trial</dt><dd>{form.trial} days</dd>
                   <dt>First charge</dt><dd>After trial ends</dd>

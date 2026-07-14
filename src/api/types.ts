@@ -22,7 +22,7 @@ export const CONTRACT_KEYS: Record<string, string[]> = {
     'contact_name','contact_email','contact_phone','address'],
   PLAN_KEYS: ['id','name','tier','pricing','price','per_student','min_students','period',
     'features','limits','visibility','audience','band','offer','color','description'],
-  TEAM_MEMBER_KEYS: ['id','name','email','phone','role','status','last_login','joined'],
+  TEAM_MEMBER_KEYS: ['id','name','email','phone','role','status','last_login','joined','employee_id','photo_url','documents'],
   INVOICE_KEYS: ['id','tenant_id','tenant_name','plan_name','amount','status','issued','due','paid_on'],
   SUBSCRIPTION_KEYS: ['id','tenant_id','tenant_name','plan_id','plan_name','tier','status',
     'current_period_start','current_period_end','next_charge'],
@@ -103,7 +103,7 @@ export interface CreateClientBody {
   name: string; slug: string; country: string; size: string;
   admin_name: string; admin_email: string; admin_phone: string;
   plan_id: string; trial_days: number;
-  address?: string; status?: ClientStatus;
+  address?: string; status?: ClientStatus; csm?: string | null;
 }
 
 export type InvoiceStatus = 'paid' | 'open' | 'past_due';
@@ -149,8 +149,27 @@ export interface TicketMessage {
   id: string; author: string; role: 'agent' | 'client'; body: string; created: string;
 }
 export type TicketDetail = Ticket & { messages: TicketMessage[] };
+export interface TeamDocument {
+  id: string;
+  team_member_id: string;
+  label: string;
+  file_name: string;
+  content_type: string;
+  size_bytes: number;
+  created: string;
+}
+
+export interface TeamDocumentInput {
+  label: string;
+  file_name: string;
+  content_type: string;
+  content: string;
+}
+
 export interface TeamMember {
-  id: string; name: string; email: string; phone: string;
-  role: Role; status: string; last_login: string; joined: string;
+  id: string; name: string; email: string; phone?: string | null;
+  role: Role; status: string; last_login: string | null; joined: string;
+  employee_id: string | null; photo_url: string | null;
+  documents?: TeamDocument[];
 }
 export interface PatchTicketBody { status?: TicketStatus; assignee?: string | null; }

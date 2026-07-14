@@ -6,7 +6,10 @@ import { NavCtx, ToastCtx } from '../components';
 vi.mock('../api/hooks/useClient', () => ({
   useClient: () => ({ isLoading: false, isError: false,
     data: { id: 'c1', name: 'Greenwood High', status: 'active', plan_name: 'Gold', mrr: 50000,
-      tier: 'gold', country: 'Mumbai, MH', contact: 'a@b.c', csm: 'Ravi', health_score: 88, plan_id: 'pl_gold' } }),
+      tier: 'gold', country: 'Mumbai, MH', contact: 'a@b.c', csm: 'Ravi', health_score: 88, plan_id: 'pl_gold',
+      slug: 'greenwood', contact_name: 'Anita', contact_email: 'a@b.c', contact_phone: '9999999999',
+      address: 'Andheri East', students_count: 400, staff_count: 30, storage_gb: 12,
+      limits: { students: 1000, staff: 80, storage_gb: 50 }, created: '2026-01-01', gateway: 'razorpay' } }),
 }));
 vi.mock('../api/hooks/useClients', () => ({
   useClientUsage: () => ({ isLoading: false, isError: false, data: { students_count: 400, staff_count: 30, storage_gb: 12, limits: { students: 1000 }, usage_series: [1,2], usage_pct: 40 } }),

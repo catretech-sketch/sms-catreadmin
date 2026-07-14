@@ -11,6 +11,11 @@ vi.mock('../api/hooks/usePlans', () => ({
     { id: 'pl_gold', name: 'Gold', price: 50000, color: '#caa', description: 'Best value', limits: { students: 1000, staff: 80, storage_gb: 50 } },
   ] } }),
 }));
+vi.mock('../api/hooks/useTeam', () => ({
+  useTeam: () => ({ data: { data: [
+    { id: 'tm1', name: 'Ravi Sales', email: 'ravi@catre.app', role: 'sales', status: 'active', last_login: null, joined: '2026-01-01' },
+  ] } }),
+}));
 
 function renderWizard(go = vi.fn()) {
   return render(

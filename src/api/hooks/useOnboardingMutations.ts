@@ -16,8 +16,8 @@ export function useAdvanceOnboarding() {
 export function usePatchChecklist() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, index, done }: { id: string; index: number; done: boolean }) =>
-      patchChecklist(id, index, done),
+    mutationFn: ({ id, label, done }: { id: string; label: string; done: boolean }) =>
+      patchChecklist(id, label, done),
     onSuccess: () => { qc.invalidateQueries({ queryKey: LIST }); },
   });
 }
