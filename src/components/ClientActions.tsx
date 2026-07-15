@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Btn, ConfirmDialog, Modal, useToast, fmt } from './index';
 import { Icon } from '../lib/icons';
 import { useAuth } from '../auth/AuthContext';
-import { useSetClientStatus, useChangeClientPlan } from '../api/hooks/useClientMutations';
+import { useSetClientStatus, useChangeClientPlan, useDeleteClient } from '../api/hooks/useClientMutations';
 import { usePlans } from '../api/hooks/usePlans';
 import type { ApiError } from '../api/ApiError';
 import type { Client, Plan, ClientStatusAction } from '../api/types';
@@ -21,6 +21,18 @@ const ACTIONS: Record<ClientStatusAction, ActionDef> = {
   activate: { key: 'activate', label: 'Activate', icon: Icon.checkCircle, perm: 'clients.activate', variant: 'primary',
     confirm: { title: 'Activate this client?', message: 'Creates an active subscription, generates an invoice, and emails the school contact.', confirmLabel: 'Activate' },
     toast: { title: 'Client activated', msg: 'Subscription + invoice created; billing email sent if contact email is set.' } },
+  hold: { key: 'hold', label: 'Hold school', icon: Icon.pause, perm: 'clients.hold', variant: 'default',
+    confirm: { title: 'Put this school on hold?', message: 'School console is locked until you Release hold. Owner can still see the school in their portfolio. Reversible.', confirmLabel: 'Hold school' },
+    toast: { title: 'School on hold', msg: 'Access locked until hold is released.', kind: 'info' } },
+  release: { key: 'release', label: 'Release hold', icon: Icon.play, perm: 'clients.release', variant: 'primary',
+    confirm: { title: 'Release hold?', message: 'School returns to active — staff and students can use it again.', confirmLabel: 'Release hold' },
+    toast: { title: 'Hold released', msg: 'School is active again.' } },
+  deactivate: { key: 'deactivate', label: 'Deactivate', icon: Icon.ban, perm: 'clients.deactivate', variant: 'default', danger: true,
+    confirm: { title: 'Deactivate this school?', message: 'School console is locked until Reactivate. Stronger than Hold. Data is kept.', confirmLabel: 'Deactivate school' },
+    toast: { title: 'School deactivated', msg: 'Access revoked until reactivated.', kind: 'info' } },
+  reactivate: { key: 'reactivate', label: 'Reactivate', icon: Icon.checkCircle, perm: 'clients.reactivate', variant: 'primary',
+    confirm: { title: 'Reactivate this school?', message: 'School returns to active and billing is ensured.', confirmLabel: 'Reactivate' },
+    toast: { title: 'School reactivated', msg: 'Access restored.' } },
   suspend: { key: 'suspend', label: 'Suspend', icon: Icon.pause, perm: 'clients.suspend', variant: 'default', danger: true,
     confirm: { title: 'Suspend this client?', message: 'Users will lose access until reinstated. This is reversible. The action is logged.', confirmLabel: 'Suspend client' },
     toast: { title: 'Client suspended', msg: 'Access has been revoked.', kind: 'info' } },
@@ -33,18 +45,22 @@ const ACTIONS: Record<ClientStatusAction, ActionDef> = {
 };
 
 const BY_STATUS: Record<string, ClientStatusAction[]> = {
-  trial: ['activate', 'cancel'],
-  active: ['suspend', 'cancel'],
-  suspended: ['reinstate', 'cancel'],
+  trial: ['activate', 'hold', 'deactivate', 'cancel'],
+  active: ['hold', 'deactivate', 'cancel'],
+  hold: ['release', 'deactivate', 'cancel'],
+  deactivated: ['reactivate', 'cancel'],
+  suspended: ['reinstate', 'reactivate', 'cancel'],
   cancelled: ['start_trial'],
 };
 
-export function ClientActions({ client }: { client: Client }): React.ReactElement {
+export function ClientActions({ client, onDeleted }: { client: Client; onDeleted?: () => void }): React.ReactElement {
   const { can } = useAuth();
   const toast = useToast();
   const statusMut = useSetClientStatus(client.id);
   const planMut = useChangeClientPlan(client.id);
+  const deleteMut = useDeleteClient(client.id);
   const [confirm, setConfirm] = useState<ActionDef | null>(null);
+  const [deleteOpen, setDeleteOpen] = useState(false);
   const [planOpen, setPlanOpen] = useState(false);
 
   const fire = (a: ActionDef) =>
@@ -57,11 +73,13 @@ export function ClientActions({ client }: { client: Client }): React.ReactElemen
 
   const keys = BY_STATUS[client.status] ?? [];
   const showChangePlan = (client.status === 'trial' || client.status === 'active') && can('clients.change_plan');
+  const emptySchool = (client.students_count ?? 0) === 0 && (client.staff_count ?? 0) === 0;
+  const showDelete = emptySchool && can('clients.delete');
 
   return (
     <div className="row gap8">
       {showChangePlan && (
-        <Btn variant="default" icon={Icon.plans} disabled={planMut.isPending} onClick={() => setPlanOpen(true)}>Change plan</Btn>
+        <Btn variant="default" icon={Icon.plans} disabled={planMut.isPending} onClick={() => setPlanOpen(true)}>Force change (no payment)</Btn>
       )}
       {keys.filter(k => can(ACTIONS[k].perm)).map(k => {
         const a = ACTIONS[k];
@@ -71,11 +89,33 @@ export function ClientActions({ client }: { client: Client }): React.ReactElemen
           </Btn>
         );
       })}
+      {showDelete && (
+        <Btn variant="danger" icon={Icon.trash} disabled={deleteMut.isPending} onClick={() => setDeleteOpen(true)}>Delete</Btn>
+      )}
 
       {confirm && (
         <ConfirmDialog open onClose={() => setConfirm(null)} onConfirm={() => fire(confirm)}
           title={confirm.confirm!.title} message={confirm.confirm!.message}
           confirmLabel={confirm.confirm!.confirmLabel} danger={confirm.danger} />
+      )}
+
+      {deleteOpen && (
+        <ConfirmDialog
+          open
+          onClose={() => setDeleteOpen(false)}
+          onConfirm={() => deleteMut.mutate(undefined, {
+            onSuccess: () => {
+              toast({ kind: 'success', title: 'School deleted', msg: `${client.name} was removed.` });
+              setDeleteOpen(false);
+              onDeleted?.();
+            },
+            onError: (e) => toast({ kind: 'error', title: 'Delete failed', msg: (e as ApiError).message }),
+          })}
+          title="Delete this school permanently?"
+          message="Only allowed when there are no students and no staff/teachers. Billing records and the school owner login for this tenant will be removed. This cannot be undone."
+          confirmLabel="Delete school"
+          danger
+        />
       )}
 
       <ChangePlanModal open={planOpen} onClose={() => setPlanOpen(false)} client={client}
@@ -98,7 +138,7 @@ function ChangePlanModal({ open, onClose, client, onPick }:
     <Modal open={open} onClose={onClose}>
       <div className="modal-head">
         <div className="mh-ic" style={{ background: 'var(--accent-ghost)', color: 'var(--accent)' }}><Icon.plans size={19} /></div>
-        <div className="mh-text"><h3>Change plan</h3><p>{client.name}</p></div>
+        <div className="mh-text"><h3>Force change plan</h3><p>{client.name} · skips payment &amp; approval queue</p></div>
       </div>
       <div className="modal-body">
         <div style={{ display: 'flex', flexDirection: 'column', gap: 9, padding: '8px 0' }}>

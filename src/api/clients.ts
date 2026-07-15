@@ -6,6 +6,10 @@ import type { ClientsListParams } from './queryKeys';
 const STATUS_BY_ACTION: Record<ClientStatusAction, ClientStatus> = {
   start_trial: 'trial',
   activate: 'active',
+  hold: 'hold',
+  release: 'active',
+  deactivate: 'deactivated',
+  reactivate: 'active',
   suspend: 'suspended',
   reinstate: 'active',
   cancel: 'cancelled',
@@ -56,4 +60,9 @@ export function setClientStatus(id: string, action: ClientStatusAction, reason?:
 
 export function changeClientPlan(id: string, plan_id: string): Promise<Client> {
   return request<Client>(`/clients/${id}/change-plan`, { method: 'POST', body: { plan_id } });
+}
+
+/** Hard-delete empty school (no students / teachers / staff). Requires confirm: "DELETE". */
+export function deleteClient(id: string): Promise<void> {
+  return request<void>(`/clients/${id}`, { method: 'DELETE', body: { confirm: 'DELETE' } });
 }

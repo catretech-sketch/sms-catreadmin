@@ -1,5 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { createClient, setClientStatus, changeClientPlan } from '../clients';
+import { createClient, setClientStatus, changeClientPlan, deleteClient } from '../clients';
+import { passwordForgot } from '../auth';
 import { qk } from '../queryKeys';
 import type { CreateClientBody, ClientStatusAction } from '../types';
 
@@ -8,7 +9,14 @@ const LIST_KEY = ['clients', 'list'] as const;
 export function useCreateClient() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (body: CreateClientBody) => createClient(body),
+    mutationFn: async (body: CreateClientBody) => {
+      const client = await createClient(body);
+      /* passwordForgot: welcome + setup OTP (API may already send; this covers older APIs). */
+      if (body.admin_email) {
+        try { await passwordForgot(body.admin_email); } catch { /* best-effort */ }
+      }
+      return client;
+    },
     onSuccess: () => { qc.invalidateQueries({ queryKey: LIST_KEY }); },
   });
 }
@@ -35,6 +43,21 @@ export function useChangeClientPlan(id: string) {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: qk.clients.detail(id) });
       qc.invalidateQueries({ queryKey: LIST_KEY });
+    },
+  });
+}
+
+export function useDeleteClient(id: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: () => deleteClient(id),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: LIST_KEY });
+      qc.invalidateQueries({ queryKey: qk.dashboard() });
+      qc.invalidateQueries({ queryKey: qk.onboarding.list() });
+      qc.invalidateQueries({ queryKey: qk.subscriptions.list() });
+      qc.invalidateQueries({ queryKey: ['invoices', 'list'] });
+      qc.removeQueries({ queryKey: qk.clients.detail(id) });
     },
   });
 }

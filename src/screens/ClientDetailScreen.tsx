@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useClient } from '../api/hooks/useClient';
-import { useClientUsage, useClientActivity } from '../api/hooks/useClients';
+import { useClients, useClientUsage, useClientActivity } from '../api/hooks/useClients';
 import { QueryBoundary } from '../components/QueryBoundary';
 import { useNav, StatusBadge, UsageBar, fmt, useToast, Btn } from '../components';
 import { Icon } from '../lib/icons';
 import { ClientActions } from '../components/ClientActions';
+import { schoolsForOwner } from '../lib/ownerSchools';
 import type { Client } from '../api/types';
 
 function dash(v: string | number | null | undefined): string {
@@ -88,6 +89,12 @@ export function ClientDetailScreen(): React.ReactElement {
   const detail = useClient(id);
   const usage = useClientUsage(id);
   const activity = useClientActivity(id);
+  const allClients = useClients({ sort: '-mrr', limit: 200 });
+  const clientList: Client[] = allClients.data?.pages.flatMap(p => p.data) ?? [];
+  const ownerSchools = useMemo(
+    () => schoolsForOwner(clientList, detail.data?.contact_email, id),
+    [clientList, detail.data?.contact_email, id],
+  );
 
   return (
     <div className="page">
@@ -109,7 +116,7 @@ export function ClientDetailScreen(): React.ReactElement {
               </div>
               <div className="row gap12">
                 <StatusBadge status={detail.data.status} />
-                <ClientActions client={detail.data} />
+                <ClientActions client={detail.data} onDeleted={() => go('clients')} />
               </div>
             </div>
 
@@ -146,6 +153,48 @@ export function ClientDetailScreen(): React.ReactElement {
                     : '—'}
                 />
               </div>
+              {ownerSchools.length > 1 && (
+                <div style={{ marginTop: 18 }}>
+                  <div className="row jb" style={{ marginBottom: 10 }}>
+                    <b>Schools under this owner</b>
+                    <span className="badge badge-blue">{ownerSchools.length} schools</span>
+                  </div>
+                  <div style={{ display: 'grid', gap: 8 }}>
+                    {ownerSchools.map(s => {
+                      const isCurrent = s.id === id;
+                      return (
+                        <button
+                          key={s.id}
+                          type="button"
+                          className="row jb"
+                          onClick={() => { if (!isCurrent) go('client', { id: s.id }); }}
+                          style={{
+                            textAlign: 'left',
+                            padding: '10px 12px',
+                            borderRadius: 10,
+                            border: `1px solid ${isCurrent ? 'var(--accent-line)' : 'var(--border)'}`,
+                            background: isCurrent ? 'var(--accent-ghost)' : 'var(--surface-2)',
+                            cursor: isCurrent ? 'default' : 'pointer',
+                            width: '100%',
+                          }}
+                        >
+                          <div style={{ minWidth: 0 }}>
+                            <div className="row gap8" style={{ alignItems: 'center' }}>
+                              <span className="cell-name" style={{ fontSize: 14 }}>{s.name}</span>
+                              {isCurrent && <span className="tiny muted">This school</span>}
+                            </div>
+                            {s.slug && <div className="tiny muted mono">{s.slug}</div>}
+                          </div>
+                          <div className="row gap8" style={{ flexShrink: 0 }}>
+                            <StatusBadge status={s.status} />
+                            {!isCurrent && <Icon.chevRight size={14} style={{ color: 'var(--text-3)' }} />}
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
             </div>
 
             <div className="card" style={{ marginTop: 16, padding: 16 }}>

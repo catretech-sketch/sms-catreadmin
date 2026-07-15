@@ -5,21 +5,26 @@ import { usePlans } from '../api/hooks/usePlans';
 import { useTeam } from '../api/hooks/useTeam';
 import { useCreateClient } from '../api/hooks/useClientMutations';
 import type { ApiError } from '../api/ApiError';
-import type { Plan, CreateClientBody, ClientStatus } from '../api/types';
+import type { Plan, CreateClientBody, ClientStatus, Client } from '../api/types';
+import {
+  createClientPlanPayment,
+  createUpgradeRazorpayOrder,
+  confirmUpgradePayment,
+  loadRazorpayScript,
+  type UpgradeMode,
+} from '../api/upgradeRequests';
+
+type PayChoice = 'trial' | 'offline' | 'online';
 
 type Form = {
   name: string; slug: string; city: string; address: string; size: string; status: ClientStatus;
   adminName: string; adminEmail: string; adminPhone: string;
   plan_id: string; trial: number; csm: string;
+  payChoice: PayChoice;
 };
 
 const CITIES = ['Mumbai, MH', 'New Delhi, DL', 'Bengaluru, KA', 'Hyderabad, TS', 'Chennai, TN', 'Pune, MH', 'Kolkata, WB', 'Ahmedabad, GJ'];
 const SIZES = ['Under 200', '200–500', '500–1,200', '1,200–5,000', '5,000+'];
-const STATUSES: { value: ClientStatus; label: string }[] = [
-  { value: 'trial', label: 'Trial' },
-  { value: 'active', label: 'Active' },
-];
-// Trial presets in days; 90 ≈ a quarter, 365 ≈ a year. Anything else is entered as a custom value.
 const TRIAL_PRESETS: { days: number; note: string }[] = [
   { days: 7, note: 'week' }, { days: 14, note: 'default' }, { days: 30, note: 'month' },
   { days: 60, note: '2 months' }, { days: 90, note: 'quarter' }, { days: 365, note: 'year' },
@@ -55,9 +60,11 @@ export function OnboardWizard(): React.ReactElement {
 
   const [step, setStep] = useState(0);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [paying, setPaying] = useState(false);
   const [form, setForm] = useState<Form>({
     name: '', slug: '', city: 'Mumbai, MH', address: '', size: '', status: 'trial',
     adminName: '', adminEmail: '', adminPhone: '', plan_id: plans[0]?.id ?? '', trial: 14, csm: '',
+    payChoice: 'trial',
   });
   const set = (k: keyof Form, v: string | number) =>
     setForm(d => ({ ...d, [k]: v, ...(k === 'name' ? { slug: String(v).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') } : {}) }));
@@ -65,7 +72,7 @@ export function OnboardWizard(): React.ReactElement {
   const steps = [
     { title: 'School details', desc: 'Tell us about the school' },
     { title: 'Admin contact', desc: 'Who will administer the account' },
-    { title: 'Plan & tier', desc: 'Choose a subscription plan' },
+    { title: 'Plan & payment', desc: 'Choose plan and how they pay' },
     { title: 'Trial length', desc: 'Set the evaluation period' },
     { title: 'Review', desc: 'Confirm and create' },
   ];
@@ -77,26 +84,140 @@ export function OnboardWizard(): React.ReactElement {
       if (!form.adminName.trim()) e.adminName = 'Admin name is required';
       if (!/^[^@]+@[^@]+\.[^@]+$/.test(form.adminEmail)) e.adminEmail = 'Valid email required';
     }
+    if (step === 2) {
+      if (!form.plan_id) e.plan_id = 'Select a plan';
+      if (!form.payChoice) e.payChoice = 'Select a payment method';
+    }
     setErrors(e); return Object.keys(e).length === 0;
   };
-  const next = () => { if (validate()) setStep(s => Math.min(s + 1, steps.length - 1)); };
-  const back = () => setStep(s => Math.max(s - 1, 0));
+  const next = () => {
+    if (!validate()) return;
+    if (step === 2 && form.payChoice !== 'trial') {
+      setStep(4); // skip trial length when collecting payment now
+      return;
+    }
+    setStep(s => Math.min(s + 1, steps.length - 1));
+  };
+  const back = () => {
+    if (step === 4 && form.payChoice !== 'trial') { setStep(2); return; }
+    setStep(s => Math.max(s - 1, 0));
+  };
+
+  const afterCreatePayment = async (client: Client) => {
+    const mode: UpgradeMode = form.payChoice === 'online' ? 'online' : 'offline';
+    const payReq = await createClientPlanPayment(client.id, form.plan_id || plans[0]?.id || '', mode);
+
+    if (mode === 'offline') {
+      toast({
+        kind: 'success',
+        title: 'Client created · offline payment pending',
+        msg: `${form.name} is on trial. Confirm payment under Billing → Upgrade requests, then Approve to activate.`,
+      });
+      nav.go('billing');
+      return;
+    }
+
+    try {
+      const order = await createUpgradeRazorpayOrder(payReq.id);
+
+      const ok = await loadRazorpayScript();
+      if (!ok || !window.Razorpay) {
+        toast({
+          kind: 'info',
+          title: 'Payment not done',
+          msg: 'Client created. Razorpay did not load — payment is still pending. Finish checkout later or use offline.',
+        });
+        nav.go('billing');
+        return;
+      }
+
+      await new Promise<void>((resolve) => {
+        const rzp = new window.Razorpay!({
+          key: order.key_id,
+          amount: order.amount_paise,
+          currency: order.currency,
+          name: 'SchoolMate',
+          description: `Plan for ${form.name}`,
+          order_id: order.order_id,
+          handler: async (response: {
+            razorpay_order_id: string;
+            razorpay_payment_id: string;
+            razorpay_signature: string;
+          }) => {
+            try {
+              await confirmUpgradePayment(payReq.id, {
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_signature: response.razorpay_signature,
+              });
+              toast({
+                kind: 'success',
+                title: 'Payment received',
+                msg: 'Approve under Billing → Upgrade requests to activate the school plan.',
+              });
+            } catch (err) {
+              toast({ kind: 'error', title: 'Payment confirm failed', msg: (err as ApiError).message });
+            }
+            resolve();
+          },
+          modal: {
+            ondismiss: () => {
+              toast({
+                kind: 'info',
+                title: 'Payment not completed',
+                msg: 'Checkout closed — payment is still pending (not paid).',
+              });
+              resolve();
+            },
+          },
+        });
+        rzp.open();
+      });
+      nav.go('billing');
+    } catch (err) {
+      const ae = err as ApiError;
+      toast({
+        kind: 'info',
+        title: ae.code === 'payment_not_configured' ? 'Payment not done' : 'Payment setup failed',
+        msg: ae.code === 'payment_not_configured'
+          ? 'Client created. Razorpay is not configured — payment is still pending. Use offline pay, or add keys and finish checkout. Not treated as paid.'
+          : ae.message,
+      });
+      nav.go('billing');
+    }
+  };
 
   const submit = () => {
     const body: CreateClientBody = {
       name: form.name, slug: form.slug, country: form.city, size: form.size,
-      address: form.address, status: form.status,
+      address: form.address, status: 'trial',
       admin_name: form.adminName, admin_email: form.adminEmail, admin_phone: form.adminPhone,
-      plan_id: form.plan_id || plans[0]?.id || '', trial_days: form.trial,
+      plan_id: form.plan_id || plans[0]?.id || '', trial_days: form.payChoice === 'trial' ? form.trial : 0,
       csm: form.csm || null,
     };
+    setPaying(true);
     create.mutate(body, {
-      onSuccess: () => { toast({ kind: 'success', title: 'Client created', msg: `${form.name} is now ${form.status === 'active' ? 'active' : 'in trial'}.` }); nav.go('clients'); },
-      onError: (err) => toast({ kind: 'error', title: 'Could not create client', msg: (err as ApiError).message }),
+      onSuccess: async (client) => {
+        try {
+          if (form.payChoice === 'trial') {
+            toast({ kind: 'success', title: 'Client created', msg: `${form.name} is now in trial.` });
+            nav.go('clients');
+            return;
+          }
+          await afterCreatePayment(client);
+        } finally {
+          setPaying(false);
+        }
+      },
+      onError: (err) => {
+        setPaying(false);
+        toast({ kind: 'error', title: 'Could not create client', msg: (err as ApiError).message });
+      },
     });
   };
 
   const plan = plans.find(p => p.id === form.plan_id) ?? plans[0];
+  const busy = create.isPending || paying;
 
   return (
     <div className="page" style={{ maxWidth: 880 }}>
@@ -139,12 +260,6 @@ export function OnboardWizard(): React.ReactElement {
                     </select></div>
                 </div>
                 <Field label="Address" k="address" form={form} set={set} errors={errors} placeholder="Street, area, PIN code" />
-                <div className="field"><label>Status</label>
-                  <select className="select" value={form.status} onChange={e => set('status', e.target.value as ClientStatus)}>
-                    {STATUSES.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
-                  </select>
-                  <span className="hint">New schools usually start in Trial.</span>
-                </div>
               </div>
             )}
 
@@ -167,21 +282,44 @@ export function OnboardWizard(): React.ReactElement {
             )}
 
             {step === 2 && (
-              <div className="fc gap10">
-                {plans.map(p => (
-                  <button key={p.id} onClick={() => set('plan_id', p.id)}
-                    style={{ textAlign: 'left', padding: '14px 16px', borderRadius: 12, cursor: 'pointer',
-                      border: '1.5px solid ' + (form.plan_id === p.id ? 'var(--accent)' : 'var(--border)'),
-                      background: form.plan_id === p.id ? 'var(--accent-ghost)' : 'var(--surface-2)' }}>
-                    <div className="row jb">
-                      <div className="row gap10"><span style={{ width: 11, height: 11, borderRadius: 3, background: p.color }} />
-                        <span style={{ fontWeight: 700, fontSize: 15 }}>{p.name}</span></div>
-                      <span className="mono" style={{ fontWeight: 700 }}>{fmt.money(p.price)}<span className="tiny muted">/mo</span></span>
-                    </div>
-                    <div className="tiny muted" style={{ marginTop: 6 }}>{p.description}</div>
-                    <div className="tiny muted mono" style={{ marginTop: 8 }}>{fmt.num(p.limits.students)} students · {fmt.num(p.limits.staff)} staff · {p.limits.storage_gb} GB</div>
-                  </button>
-                ))}
+              <div className="fc gap16">
+                <div className="fc gap10">
+                  {plans.map(p => (
+                    <button key={p.id} onClick={() => set('plan_id', p.id)}
+                      style={{ textAlign: 'left', padding: '14px 16px', borderRadius: 12, cursor: 'pointer',
+                        border: '1.5px solid ' + (form.plan_id === p.id ? 'var(--accent)' : 'var(--border)'),
+                        background: form.plan_id === p.id ? 'var(--accent-ghost)' : 'var(--surface-2)' }}>
+                      <div className="row jb">
+                        <div className="row gap10"><span style={{ width: 11, height: 11, borderRadius: 3, background: p.color }} />
+                          <span style={{ fontWeight: 700, fontSize: 15 }}>{p.name}</span></div>
+                        <span className="mono" style={{ fontWeight: 700 }}>{fmt.money(p.price)}<span className="tiny muted">/mo</span></span>
+                      </div>
+                      <div className="tiny muted" style={{ marginTop: 6 }}>{p.description}</div>
+                      <div className="tiny muted mono" style={{ marginTop: 8 }}>{fmt.num(p.limits.students)} students · {fmt.num(p.limits.staff)} staff · {p.limits.storage_gb} GB</div>
+                    </button>
+                  ))}
+                  {errors.plan_id && <span className="err">{errors.plan_id}</span>}
+                </div>
+
+                <div>
+                  <label style={{ fontSize: 12.5, fontWeight: 600, color: 'var(--text-2)' }}>Payment method</label>
+                  <div className="fc gap8" style={{ marginTop: 10 }}>
+                    {([
+                      { value: 'trial' as const, title: 'Start on trial', desc: 'No payment now. Activate later from the client page.' },
+                      { value: 'offline' as const, title: 'Pay offline', desc: 'Bank / NEFT / cheque. Approve under Billing → Upgrade requests after money is received.' },
+                      { value: 'online' as const, title: 'Pay online (Razorpay)', desc: 'Collect payment now, then Approve to activate the plan.' },
+                    ]).map(opt => (
+                      <button key={opt.value} type="button" onClick={() => set('payChoice', opt.value)}
+                        style={{ textAlign: 'left', padding: '12px 14px', borderRadius: 10, cursor: 'pointer',
+                          border: '1.5px solid ' + (form.payChoice === opt.value ? 'var(--accent)' : 'var(--border)'),
+                          background: form.payChoice === opt.value ? 'var(--accent-ghost)' : 'var(--surface-2)' }}>
+                        <div style={{ fontWeight: 700, fontSize: 14 }}>{opt.title}</div>
+                        <div className="tiny muted" style={{ marginTop: 4 }}>{opt.desc}</div>
+                      </button>
+                    ))}
+                  </div>
+                  {errors.payChoice && <span className="err">{errors.payChoice}</span>}
+                </div>
               </div>
             )}
 
@@ -222,12 +360,19 @@ export function OnboardWizard(): React.ReactElement {
                 <dl className="dl">
                   <dt>City</dt><dd>{form.city}</dd>
                   <dt>Address</dt><dd>{form.address || '—'}</dd>
-                  <dt>Status</dt><dd>{STATUSES.find(s => s.value === form.status)?.label ?? form.status}</dd>
                   <dt>Admin</dt><dd>{form.adminName || '—'} · {form.adminEmail || '—'}</dd>
                   <dt>CSM</dt><dd>{form.csm || 'Unassigned'}</dd>
                   <dt>Plan</dt><dd>{plan ? `${plan.name} · ${fmt.money(plan.price)}/mo` : '—'}</dd>
-                  <dt>Trial</dt><dd>{form.trial} days</dd>
-                  <dt>First charge</dt><dd>After trial ends</dd>
+                  <dt>Payment</dt>
+                  <dd>
+                    {form.payChoice === 'trial' && `Trial · ${form.trial} days (no payment now)`}
+                    {form.payChoice === 'offline' && 'Offline (approve after payment received)'}
+                    {form.payChoice === 'online' && 'Razorpay (collect now, then approve)'}
+                  </dd>
+                  <dt>First charge</dt>
+                  <dd>
+                    {form.payChoice === 'trial' ? 'After trial ends / activation' : plan ? fmt.money(plan.price) + '/mo on approval' : '—'}
+                  </dd>
                 </dl>
                 <div className="row gap10" style={{ padding: '11px 14px', background: 'var(--accent-ghost)', borderRadius: 10, color: 'var(--accent-text)', fontSize: 12.5 }}>
                   <Icon.info size={15} /> An invite email will be sent to the admin to complete setup.
@@ -240,7 +385,9 @@ export function OnboardWizard(): React.ReactElement {
             <div>{step > 0 && <Btn variant="ghost" icon={Icon.chevLeft} onClick={back}>Back</Btn>}</div>
             {step < steps.length - 1
               ? <Btn variant="primary" onClick={next}>Continue <Icon.arrowRight size={16} /></Btn>
-              : <Btn variant="primary" icon={Icon.rocket} disabled={create.isPending} onClick={submit}>{create.isPending ? 'Creating…' : 'Create client'}</Btn>}
+              : <Btn variant="primary" icon={Icon.rocket} disabled={busy} onClick={submit}>
+                  {busy ? 'Working…' : form.payChoice === 'online' ? 'Create & collect payment' : form.payChoice === 'offline' ? 'Create & request offline payment' : 'Create client'}
+                </Btn>}
           </div>
         </div>
       </div>

@@ -12,12 +12,22 @@ vi.mock('../api/hooks/useClient', () => ({
       limits: { students: 1000, staff: 80, storage_gb: 50 }, created: '2026-01-01', gateway: 'razorpay' } }),
 }));
 vi.mock('../api/hooks/useClients', () => ({
+  useClients: () => ({
+    isLoading: false, isError: false,
+    data: { pages: [{ data: [
+      { id: 'c1', name: 'Greenwood High', status: 'active', plan_name: 'Gold', mrr: 50000, tier: 'gold',
+        contact_email: 'a@b.c', slug: 'greenwood' },
+      { id: 'c2', name: 'Greenwood East', status: 'trial', plan_name: 'Silver', mrr: 0, tier: 'silver',
+        contact_email: 'a@b.c', slug: 'greenwood-east' },
+    ], next_cursor: null }] },
+  }),
   useClientUsage: () => ({ isLoading: false, isError: false, data: { students_count: 400, staff_count: 30, storage_gb: 12, limits: { students: 1000 }, usage_series: [1,2], usage_pct: 40 } }),
   useClientActivity: () => ({ isLoading: false, isError: false, data: { data: [], next_cursor: null } }),
 }));
 vi.mock('../api/hooks/useClientMutations', () => ({
   useSetClientStatus: () => ({ mutate: vi.fn(), isPending: false }),
   useChangeClientPlan: () => ({ mutate: vi.fn(), isPending: false }),
+  useDeleteClient: () => ({ mutate: vi.fn(), isPending: false }),
 }));
 vi.mock('../api/hooks/usePlans', () => ({ usePlans: () => ({ data: { data: [] } }) }));
 vi.mock('../auth/AuthContext', () => ({ useAuth: () => ({ can: () => true }) }));
@@ -26,12 +36,20 @@ describe('ClientDetailScreen', () => {
   it('renders the client name from detail data', () => {
     render(<NavCtx.Provider value={{ route: { name: 'client', params: { id: 'c1' } }, go: () => {} }}>
       <ToastCtx.Provider value={() => {}}><ClientDetailScreen /></ToastCtx.Provider></NavCtx.Provider>);
-    expect(screen.getByText('Greenwood High')).toBeInTheDocument();
+    expect(screen.getAllByText('Greenwood High').length).toBeGreaterThanOrEqual(1);
+  });
+
+  it('lists sibling schools that share the owner email', () => {
+    render(<NavCtx.Provider value={{ route: { name: 'client', params: { id: 'c1' } }, go: () => {} }}>
+      <ToastCtx.Provider value={() => {}}><ClientDetailScreen /></ToastCtx.Provider></NavCtx.Provider>);
+    expect(screen.getByText('Schools under this owner')).toBeInTheDocument();
+    expect(screen.getByText('Greenwood East')).toBeInTheDocument();
+    expect(screen.getByText('2 schools')).toBeInTheDocument();
   });
 
   it('renders client lifecycle actions for an active client', () => {
     render(<NavCtx.Provider value={{ route: { name: 'client', params: { id: 'c1' } }, go: () => {} }}>
       <ToastCtx.Provider value={() => {}}><ClientDetailScreen /></ToastCtx.Provider></NavCtx.Provider>);
-    expect(screen.getByText('Suspend')).toBeInTheDocument();
+    expect(screen.getByText('Hold school')).toBeInTheDocument();
   });
 });

@@ -8,20 +8,25 @@ import type { Client } from '../api/types';
 vi.mock('../api/hooks/useClientMutations', () => ({
   useSetClientStatus: () => ({ mutate: vi.fn(), isPending: false }),
   useChangeClientPlan: () => ({ mutate: vi.fn(), isPending: false }),
+  useDeleteClient: () => ({ mutate: vi.fn(), isPending: false }),
 }));
 vi.mock('../api/hooks/usePlans', () => ({ usePlans: () => ({ data: { data: [] } }) }));
 vi.mock('../auth/AuthContext', () => ({ useAuth: () => ({ can: () => true }) }));
-
-const client = { id: 'c1', status: 'active', plan_id: 'pl_gold', name: 'Greenwood' } as Client;
 
 function renderWithToast(ui: React.ReactElement) {
   return render(<ToastCtx.Provider value={() => {}}>{ui}</ToastCtx.Provider>);
 }
 
 describe('ClientActions', () => {
-  it('shows the active-status action set (change plan, suspend, cancel) and hides delete', () => {
-    renderWithToast(<ClientActions client={client} />);
-    expect(screen.getByText('Change plan')).toBeInTheDocument();
+  it('shows delete for empty schools (no students/staff)', () => {
+    const empty = { id: 'c1', status: 'trial', plan_id: 'pl_gold', name: 'Empty', students_count: 0, staff_count: 0 } as Client;
+    renderWithToast(<ClientActions client={empty} />);
+    expect(screen.getByText('Delete')).toBeInTheDocument();
+  });
+
+  it('hides delete when school has students or staff', () => {
+    const filled = { id: 'c1', status: 'active', plan_id: 'pl_gold', name: 'Greenwood', students_count: 12, staff_count: 0 } as Client;
+    renderWithToast(<ClientActions client={filled} />);
     expect(screen.getByText('Suspend')).toBeInTheDocument();
     expect(screen.getByText('Cancel')).toBeInTheDocument();
     expect(screen.queryByText('Delete')).not.toBeInTheDocument();
@@ -31,9 +36,15 @@ describe('ClientActions', () => {
   it('hides actions the role cannot perform', async () => {
     vi.resetModules();
     vi.doMock('../auth/AuthContext', () => ({ useAuth: () => ({ can: (p: string) => p !== 'clients.suspend' }) }));
+    vi.doMock('../api/hooks/useClientMutations', () => ({
+      useSetClientStatus: () => ({ mutate: vi.fn(), isPending: false }),
+      useChangeClientPlan: () => ({ mutate: vi.fn(), isPending: false }),
+      useDeleteClient: () => ({ mutate: vi.fn(), isPending: false }),
+    }));
+    vi.doMock('../api/hooks/usePlans', () => ({ usePlans: () => ({ data: { data: [] } }) }));
     const { ClientActions: Gated } = await import('./ClientActions');
+    const client = { id: 'c1', status: 'active', plan_id: 'pl_gold', name: 'Greenwood', students_count: 1, staff_count: 1 } as Client;
     renderWithToast(<Gated client={client} />);
     expect(screen.queryByText('Suspend')).not.toBeInTheDocument();
-    expect(screen.getByText('Change plan')).toBeInTheDocument();
   });
 });

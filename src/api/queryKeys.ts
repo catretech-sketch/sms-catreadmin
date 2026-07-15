@@ -35,4 +35,7 @@ export const qk = {
     list: () => ['team', 'list'] as const,
   },
   onboarding: { list: () => ['onboarding', 'list'] as const },
+  upgradeRequests: {
+    list: (status?: string) => ['upgradeRequests', 'list', status ?? 'all'] as const,
+  },
 };

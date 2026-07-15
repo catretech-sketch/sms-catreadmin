@@ -309,6 +309,44 @@ table.table {
 .tbl .num,
 .table .num { text-align: right; font-family: var(--mono); font-variant-numeric: tabular-nums; font-weight: 600; }
 
+/* Owner → schools expand panel on Clients */
+.owner-schools-row:hover { background: transparent !important; }
+.owner-schools-cell {
+  padding: 0 12px 14px !important;
+  background: var(--surface-2);
+  border-bottom: 1px solid var(--border-soft);
+  vertical-align: top;
+}
+.owner-schools {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface);
+  overflow: hidden;
+}
+.owner-schools-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border-soft);
+  background: var(--surface-2);
+}
+.owner-schools-tbl-wrap { max-height: none; }
+.owner-schools-tbl { margin: 0; font-size: 13px; }
+.owner-schools-tbl thead th {
+  position: static;
+  background: var(--surface);
+  font-size: 11px;
+  padding: 8px 12px;
+}
+.owner-schools-tbl tbody td {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border-soft);
+}
+.owner-schools-tbl tbody tr:last-child td { border-bottom: none; }
+.owner-schools-tbl tbody tr:hover { background: var(--surface-2); }
+
 /* Primary name in a row — clients, team, onboarding cards, tickets */
 .cell-name {
   font-size: 15px;

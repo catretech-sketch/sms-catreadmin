@@ -5,10 +5,11 @@ import type { Invoice } from '../api/types';
 import { PlansTab } from '../components/billing/PlansTab';
 import { SubscriptionsTab } from '../components/billing/SubscriptionsTab';
 import { InvoicesTab } from '../components/billing/InvoicesTab';
+import { UpgradeRequestsTab } from '../components/billing/UpgradeRequestsTab';
 import { Btn } from '../components';
 import { Icon } from '../lib/icons';
 
-type TabKey = 'plans' | 'subscriptions' | 'invoices';
+type TabKey = 'plans' | 'subscriptions' | 'invoices' | 'upgrades';
 
 interface TabDef {
   key: TabKey;
@@ -22,6 +23,7 @@ export function BillingScreen({ plansOnly }: { plansOnly?: boolean }): React.Rea
   const allTabs: TabDef[] = plansOnly
     ? [{ key: 'plans', label: 'Plans catalog', perm: 'plans.view' }]
     : [
+        { key: 'upgrades', label: 'Upgrade requests', perm: 'billing.view' },
         { key: 'plans', label: 'Plans', perm: 'plans.view' },
         { key: 'subscriptions', label: 'Subscriptions', perm: 'billing.view' },
         { key: 'invoices', label: 'Invoices', perm: 'billing.view' },
@@ -79,6 +81,7 @@ export function BillingScreen({ plansOnly }: { plansOnly?: boolean }): React.Rea
         </div>
       )}
 
+      {tab === 'upgrades' && <UpgradeRequestsTab />}
       {tab === 'plans' && <PlansTab />}
       {tab === 'subscriptions' && <SubscriptionsTab />}
       {tab === 'invoices' && <InvoicesTab />}
