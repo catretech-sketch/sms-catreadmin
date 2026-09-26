@@ -18,11 +18,11 @@ export const fmt = {
   k: (n: number) => n >= 1000 ? '₹' + (n / 1000).toFixed(1) + 'k' : '₹' + n,
 };
 
-export const initials = (name: string) => name.split(' ').map(w => w[0]).slice(0, 2).join('');
+export const initials = (name: string) => (name || '').split(' ').map(w => w[0]).slice(0, 2).join('');
 
 // deterministic avatar color
 const AV_COLORS = ['#7c74ff', '#3ecf8e', '#f0b429', '#4ca6ff', '#b07cff', '#f7686b', '#2dd4bf', '#fb923c'];
-export const avColor = (str: string) => AV_COLORS[[...str].reduce((a, c) => a + c.charCodeAt(0), 0) % AV_COLORS.length];
+export const avColor = (str: string) => AV_COLORS[[...(str || '?')].reduce((a, c) => a + c.charCodeAt(0), 0) % AV_COLORS.length];
 
 /* ---- Avatar ---- */
 type AvatarProps = { name: string; size?: number; square?: boolean; src?: string | null };
