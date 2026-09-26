@@ -42,18 +42,18 @@ export function DashboardScreen(): React.ReactElement {
           <>
             <div className="kpi-grid" style={{ marginBottom: 16 }}>
               {([
-                { label: 'Total clients', value: fmt.num(q.data.counts.total), icon: Icon.building, tint: 'var(--text-2)' },
-                { label: 'Active', value: fmt.num(q.data.counts.active), icon: Icon.checkCircle, tint: 'var(--green)' },
-                { label: 'Trials', value: fmt.num(q.data.counts.trial), icon: Icon.zap, tint: 'var(--amber)' },
-                { label: 'Suspended', value: fmt.num(q.data.counts.suspended), icon: Icon.pause, tint: 'var(--red)' },
-                { label: 'MRR', value: fmt.money(q.data.mrr), icon: Icon.dollar, tint: 'var(--accent)' },
-                { label: 'Churn', value: fmt.pct(q.data.churn_pct), icon: Icon.trendDown, tint: 'var(--green)' },
-                { label: 'Trials ending', value: fmt.num(q.data.trials_ending), icon: Icon.clock, tint: 'var(--amber)' },
-              ] as { label: string; value: string; icon: IconComponent; tint: string }[]).map(k => (
-                <div className="kpi" key={k.label}>
+                { label: 'Total clients', value: fmt.num(q.data.counts.total), icon: Icon.building, tint: 'var(--blue)', bg: 'var(--blue-bg)' },
+                { label: 'Active', value: fmt.num(q.data.counts.active), icon: Icon.checkCircle, tint: 'var(--green)', bg: 'var(--green-bg)' },
+                { label: 'Trials', value: fmt.num(q.data.counts.trial), icon: Icon.zap, tint: 'var(--amber)', bg: 'var(--amber-bg)' },
+                { label: 'Suspended', value: fmt.num(q.data.counts.suspended), icon: Icon.pause, tint: 'var(--red)', bg: 'var(--red-bg)' },
+                { label: 'MRR', value: fmt.money(q.data.mrr), icon: Icon.dollar, tint: 'var(--accent)', bg: 'var(--accent-ghost)' },
+                { label: 'Churn', value: fmt.pct(q.data.churn_pct), icon: Icon.trendDown, tint: 'var(--violet)', bg: 'var(--violet-bg)' },
+                { label: 'Trials ending', value: fmt.num(q.data.trials_ending), icon: Icon.clock, tint: 'var(--amber)', bg: 'var(--amber-bg)' },
+              ] as { label: string; value: string; icon: IconComponent; tint: string; bg: string }[]).map(k => (
+                <div className="kpi" key={k.label} style={{ borderTopColor: k.tint, borderTopWidth: 2.5 }}>
                   <div className="kpi-top">
                     <span>{k.label}</span>
-                    <span className="kpi-ic" style={{ color: k.tint }}>{React.createElement(k.icon, { size: 14 })}</span>
+                    <span className="kpi-ic" style={{ color: k.tint, background: k.bg }}>{React.createElement(k.icon, { size: 14 })}</span>
                   </div>
                   <div className="kpi-val">{k.value}</div>
                 </div>
@@ -72,7 +72,7 @@ export function DashboardScreen(): React.ReactElement {
                 <div className="card-pad">
                   {allZero(q.data.mrr_series)
                     ? <p className="muted" style={{ padding: '32px 0', textAlign: 'center' }}>Not enough history yet</p>
-                    : <Charts.Line data={q.data.mrr_series} labels={q.data.months} format={fmt.k} />}
+                    : <Charts.Line data={q.data.mrr_series} labels={q.data.months} format={fmt.k} color="var(--green)" />}
                 </div>
               </div>
               <div className="card">
@@ -89,7 +89,7 @@ export function DashboardScreen(): React.ReactElement {
                 <div className="card-pad">
                   {allZero(q.data.signup_series)
                     ? <p className="muted" style={{ padding: '32px 0', textAlign: 'center' }}>Not enough history yet</p>
-                    : <Charts.Bars data={q.data.signup_series} labels={q.data.months} />}
+                    : <Charts.Bars data={q.data.signup_series} labels={q.data.months} color="var(--blue)" />}
                 </div>
               </div>
 

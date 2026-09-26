@@ -18,29 +18,29 @@ import { ErrorBoundary } from './components/ErrorBoundary';
 import { ROLES } from './auth/rbac';
 
 /* ---- nav structure (ported from app.jsx) ---- */
-type NavItem = { key: string; label: string; icon: IconComponent; perm: string; route: string; match?: string[] };
+type NavItem = { key: string; label: string; icon: IconComponent; perm: string; route: string; match?: string[]; color: string };
 type NavGroup = { group: string; items: NavItem[] };
 
 const NAV: NavGroup[] = [
   { group: 'Overview', items: [
-    { key: 'dashboard', label: 'Dashboard', icon: Icon.dashboard, perm: 'dashboard.view', route: 'dashboard' },
+    { key: 'dashboard', label: 'Dashboard', icon: Icon.dashboard, perm: 'dashboard.view', route: 'dashboard', color: 'var(--accent)' },
   ] },
   { group: 'Clients', items: [
-    { key: 'clients', label: 'Clients', icon: Icon.building, perm: 'clients.view', route: 'clients', match: ['clients', 'client', 'onboard'] },
-    { key: 'onboarding', label: 'Onboarding', icon: Icon.onboard, perm: 'onboarding.view', route: 'onboarding' },
+    { key: 'clients', label: 'Clients', icon: Icon.building, perm: 'clients.view', route: 'clients', match: ['clients', 'client', 'onboard'], color: 'var(--blue)' },
+    { key: 'onboarding', label: 'Onboarding', icon: Icon.onboard, perm: 'onboarding.view', route: 'onboarding', color: 'var(--blue)' },
   ] },
   { group: 'Revenue', items: [
-    { key: 'plans', label: 'Plans', icon: Icon.plans, perm: 'plans.view', route: 'plans' },
-    { key: 'billing', label: 'Billing', icon: Icon.billing, perm: 'billing.view', route: 'billing', match: ['billing'] },
-    { key: 'reports', label: 'Reports', icon: Icon.reports, perm: 'reports.view', route: 'reports' },
+    { key: 'plans', label: 'Plans', icon: Icon.plans, perm: 'plans.view', route: 'plans', color: 'var(--green)' },
+    { key: 'billing', label: 'Billing', icon: Icon.billing, perm: 'billing.view', route: 'billing', match: ['billing'], color: 'var(--green)' },
+    { key: 'reports', label: 'Reports', icon: Icon.reports, perm: 'reports.view', route: 'reports', color: 'var(--violet)' },
   ] },
   { group: 'Operations', items: [
-    { key: 'support', label: 'Support', icon: Icon.support, perm: 'support.view', route: 'support', match: ['support', 'health'] },
+    { key: 'support', label: 'Support', icon: Icon.support, perm: 'support.view', route: 'support', match: ['support', 'health'], color: 'var(--amber)' },
   ] },
   { group: 'Admin', items: [
-    { key: 'identity', label: 'Identity & Access', icon: Icon.shield, perm: 'identity.view', route: 'identity' },
-    { key: 'team', label: 'Team', icon: Icon.team, perm: 'team.view', route: 'team' },
-    { key: 'settings', label: 'Settings', icon: Icon.settings, perm: 'settings.view', route: 'settings' },
+    { key: 'identity', label: 'Identity & Access', icon: Icon.shield, perm: 'identity.view', route: 'identity', color: 'var(--violet)' },
+    { key: 'team', label: 'Team', icon: Icon.team, perm: 'team.view', route: 'team', color: 'var(--violet)' },
+    { key: 'settings', label: 'Settings', icon: Icon.settings, perm: 'settings.view', route: 'settings', color: 'var(--slate)' },
   ] },
 ];
 
@@ -156,7 +156,7 @@ export function App() {
                       onClick={() => go(it.route)}
                       title={collapsed ? it.label : undefined}
                     >
-                      <it.icon size={17} />
+                      <it.icon size={17} style={{ color: it.color }} />
                       <span className="nav-item-label">{it.label}</span>
                     </button>
                   ))}
